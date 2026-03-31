@@ -33,6 +33,13 @@ Goal-type items also have:
 
 Goals are worked through weekly PDCA cycles. Milestones are the checkpoints that prove momentum. The weekly check-in is where SMART targets and PDCA loops meet.
 
+### Wins (`data.json`)
+`wins` array — cross-cutting good moments that prove the flywheel is working:
+```json
+{ "date": "2026-04-12", "note": "First time fishing the bay. Didn't catch anything but loved it." }
+```
+Wins can relate to specific items or cut across many. Log them during check-ins or whenever something good happens. They're the record of the life being built.
+
 ### Check-ins (`data.json`)
 `check_ins` array — weekly wellness snapshots:
 ```json

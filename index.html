@@ -291,6 +291,42 @@
       }
       .detail-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── Wins ── */
+    .wins-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .win-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #1e2130;
+      font-size: 0.88rem;
+      color: #c9cdd5;
+    }
+
+    .win-item:hover { background: #1a1d27; }
+
+    .win-date {
+      flex-shrink: 0;
+      color: #7a8290;
+      font-size: 0.82rem;
+    }
+
+    .win-icon {
+      color: #34d399;
+      flex-shrink: 0;
+    }
+
+    .wins-empty {
+      color: #7a8290;
+      font-style: italic;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.88rem;
+    }
   </style>
 </head>
 <body>
@@ -318,6 +354,9 @@
     </thead>
     <tbody id="tracker-body"></tbody>
   </table>
+
+  <h2>Wins</h2>
+  <ul class="wins-list" id="wins-list"></ul>
 
   <h2>Tasks</h2>
   <ul class="task-list" id="task-list"></ul>
@@ -427,6 +466,20 @@
       return [row, detailRow];
     }
 
+    function renderWins(wins) {
+      const list = document.getElementById('wins-list');
+      if (!wins || wins.length === 0) {
+        list.innerHTML = '<li class="wins-empty">No wins logged yet. They\'ll show up here.</li>';
+        return;
+      }
+      wins.slice().reverse().forEach(w => {
+        const li = document.createElement('li');
+        li.className = 'win-item';
+        li.innerHTML = `<span class="win-icon">\u2605</span><span class="win-date">${formatDate(w.date)}</span><span>${w.note}</span>`;
+        list.appendChild(li);
+      });
+    }
+
     function renderTasks(tasks) {
       const list = document.getElementById('task-list');
       tasks.forEach(t => {
@@ -450,6 +503,7 @@
         tbody.appendChild(row);
         tbody.appendChild(detailRow);
       });
+      renderWins(data.wins || []);
       renderTasks(taskData.tasks.filter(t => t.status !== 'done'));
     }).catch(err => {
       console.error('Failed to load data:', err);
