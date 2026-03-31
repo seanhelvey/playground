@@ -3,43 +3,300 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lab</title>
+  <title>Playground</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: Georgia, serif;
       background: #f9f6f0;
       color: #2c2c2c;
-      max-width: 680px;
-      margin: 80px auto;
-      padding: 0 24px;
+      max-width: 1060px;
+      margin: 48px auto;
+      padding: 0 20px;
       line-height: 1.7;
     }
-    h1 { font-size: 1.4rem; font-weight: normal; letter-spacing: 0.05em; margin-bottom: 2rem; }
-    .tagline { color: #777; font-size: 0.95rem; margin-bottom: 3rem; }
-    section { margin-bottom: 2.5rem; }
-    section h2 { font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; }
-    section p { font-size: 0.95rem; color: #444; }
-    .status { display: inline-block; font-size: 0.75rem; color: #999; margin-left: 8px; }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: normal;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .intro {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      max-width: 560px;
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 0.68rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #999;
+      padding: 0.5rem 0.75rem;
+      background: #f2ede6;
+      border: 1px solid #ddd8d0;
+      cursor: default;
+    }
+
+    tbody tr.row {
+      cursor: pointer;
+    }
+
+    tbody tr.row:hover {
+      background: #f5f1ea;
+    }
+
+    tbody td {
+      padding: 0.7rem 0.75rem;
+      vertical-align: top;
+      border: 1px solid #ddd8d0;
+      color: #444;
+    }
+
+    .col-name {
+      font-weight: bold;
+      color: #2c2c2c;
+      white-space: nowrap;
+    }
+
+    .col-type {
+      font-size: 0.72rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    .col-momentum {
+      white-space: nowrap;
+    }
+
+    .momentum-rising  { color: #4a8c5c; }
+    .momentum-steady  { color: #8a7a3a; }
+    .momentum-stalling { color: #b07040; }
+    .momentum-dormant { color: #aaa; }
+
+    .col-updated {
+      white-space: nowrap;
+      color: #999;
+      font-size: 0.82rem;
+    }
+
+    a { color: #2c2c2c; }
+
+    /* ── Expanded log row ── */
+    tr.log-row td {
+      background: #f5f2ec;
+      padding: 0.5rem 0.75rem 0.75rem;
+      border-top: none;
+    }
+
+    .log-container {
+      padding-left: 0.5rem;
+    }
+
+    .log-title {
+      font-size: 0.68rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #bbb;
+      margin-bottom: 0.4rem;
+    }
+
+    .log-entry {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 0.25rem;
+    }
+
+    .log-date {
+      color: #aaa;
+      margin-right: 0.5rem;
+    }
+
+    .hidden { display: none; }
+
+    /* ── Mobile ── */
+    @media (max-width: 700px) {
+      body { margin: 28px auto; }
+      table, thead, tbody, tr, td { display: block; width: 100%; }
+      thead { display: none; }
+
+      tbody tr.row {
+        background: #fff;
+        border: 1px solid #ddd8d0;
+        border-radius: 6px;
+        margin-bottom: 0.75rem;
+        padding: 0.8rem 1rem;
+      }
+
+      tbody tr.row:hover { background: #fff; }
+
+      tbody tr.row td {
+        border: none;
+        padding: 0.15rem 0;
+      }
+
+      .col-name {
+        font-size: 1.05rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .col-type { display: inline; }
+      .col-momentum { display: inline; margin-left: 0.4rem; }
+
+      .mobile-meta {
+        margin-bottom: 0.4rem;
+      }
+
+      td.col-focus::before {
+        content: "Focus — ";
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #bbb;
+      }
+
+      td.col-next::before {
+        content: "Next — ";
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #bbb;
+      }
+
+      td.col-updated::before {
+        content: "Updated — ";
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #bbb;
+      }
+
+      tr.log-row {
+        background: #fff;
+        border: 1px solid #ddd8d0;
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+        margin-top: -0.75rem;
+        margin-bottom: 0.75rem;
+      }
+
+      tr.log-row td {
+        border: none;
+        padding: 0.5rem 1rem 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Lab</h1>
-  <p class="tagline">A space for building, experimenting, and thinking out loud.</p>
 
-  <section>
-    <h2>Community <span class="status">brainstorming</span></h2>
-    <p>Exploring how transformational community work and regional organizing can be supported with better tools — events, coordination, shared memory.</p>
-  </section>
+  <h1>Playground</h1>
+  <p class="intro">A personal flywheel for habits, dreams, and projects. Build, act, learn, repeat.</p>
 
-  <section>
-    <h2>Nature <span class="status">brainstorming</span></h2>
-    <p>Living closer to the land. Permaculture, community farming, foraging, fishing. Less screen, more soil — with technology as a quiet aide rather than the point.</p>
-  </section>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Momentum</th>
+        <th>Focus</th>
+        <th>Next</th>
+        <th>Updated</th>
+      </tr>
+    </thead>
+    <tbody id="tracker-body">
+    </tbody>
+  </table>
 
-  <section>
-    <h2>Agentic Engineering <span class="status">active</span></h2>
-    <p>This repo as a practice loop: build something, push it, measure it, improve it. Each project a cycle. CI as a habit of mind.</p>
-  </section>
+  <script>
+    const MOMENTUM_ARROWS = {
+      rising: '↑',
+      steady: '→',
+      stalling: '↓',
+      dormant: '·'
+    };
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function renderRow(item) {
+      const arrow = MOMENTUM_ARROWS[item.momentum] || '·';
+      const momentumClass = 'momentum-' + item.momentum;
+      const nameExtra = item.url
+        ? ` <a href="${item.url}" target="_blank">↗</a>`
+        : '';
+
+      const row = document.createElement('tr');
+      row.className = 'row';
+      row.innerHTML = `
+        <td class="col-name">${item.name}${nameExtra}</td>
+        <td class="col-type">${item.type}</td>
+        <td class="col-momentum ${momentumClass}">${arrow} ${item.momentum}</td>
+        <td class="col-focus">${item.focus}</td>
+        <td class="col-next">${item.next}</td>
+        <td class="col-updated">${formatDate(item.last_updated)}</td>
+      `;
+
+      const logRow = document.createElement('tr');
+      logRow.className = 'log-row hidden';
+      const logEntries = (item.log || [])
+        .slice()
+        .reverse()
+        .map(e => `<div class="log-entry"><span class="log-date">${formatDate(e.date)}</span>${e.note}</div>`)
+        .join('');
+
+      logRow.innerHTML = `
+        <td colspan="6">
+          <div class="log-container">
+            <div class="log-title">Log</div>
+            ${logEntries || '<div class="log-entry">No entries yet.</div>'}
+          </div>
+        </td>
+      `;
+
+      row.addEventListener('click', function(e) {
+        if (e.target.tagName === 'A') return;
+        logRow.classList.toggle('hidden');
+      });
+
+      return [row, logRow];
+    }
+
+    fetch('data.json')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('tracker-body');
+        data.items.forEach(item => {
+          const [row, logRow] = renderRow(item);
+          tbody.appendChild(row);
+          tbody.appendChild(logRow);
+        });
+      })
+      .catch(err => {
+        console.error('Failed to load data.json:', err);
+      });
+  </script>
+
 </body>
 </html>

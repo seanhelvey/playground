@@ -1,0 +1,106 @@
+{
+  "title": "Playground",
+  "description": "A personal flywheel for habits, dreams, and projects. Build, act, learn, repeat.",
+  "items": [
+    {
+      "name": "Screen time",
+      "type": "Core",
+      "momentum": "steady",
+      "focus": "Tracking daily usage, protecting attention.",
+      "next": "Review weekly average and set a target.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Awareness is the first step." }
+      ]
+    },
+    {
+      "name": "Meditation",
+      "type": "Core",
+      "momentum": "steady",
+      "focus": "Maintaining a regular sitting practice.",
+      "next": "Lock in a consistent time of day.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Practice is established but not yet daily." }
+      ]
+    },
+    {
+      "name": "DM a friend",
+      "type": "Core",
+      "momentum": "steady",
+      "focus": "Reaching out to one person daily.",
+      "next": "Keep it going for a full month and notice what shifts.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Building the daily habit of intentional connection." }
+      ]
+    },
+    {
+      "name": "Fast after dinner",
+      "type": "Habit",
+      "momentum": "rising",
+      "focus": "No eating after dinner. Building the pattern.",
+      "next": "Track consistency for two weeks.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. New habit, working on consistency." }
+      ]
+    },
+    {
+      "name": "Wake to alarm",
+      "type": "Habit",
+      "momentum": "rising",
+      "focus": "Getting up when the alarm goes off, no snoozing.",
+      "next": "Set one consistent wake time and protect it.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Working on discipline around morning routine." }
+      ]
+    },
+    {
+      "name": "Dancing",
+      "type": "Dream",
+      "momentum": "rising",
+      "focus": "Active in 5Rhythms and learning swing. Want to explore latin styles.",
+      "next": "Find a latin dance class or social.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Already practicing 5Rhythms and swing. Latin is the next frontier." }
+      ]
+    },
+    {
+      "name": "Music",
+      "type": "Dream",
+      "momentum": "steady",
+      "focus": "West African rhythm class is the anchor. Interested in expanding to voice and other instruments.",
+      "next": "Try one thing with voice — a class, a jam, anything.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Rhythm class is ongoing. Voice and instruments are aspirational." }
+      ]
+    },
+    {
+      "name": "Coloft",
+      "type": "Dream",
+      "momentum": "steady",
+      "focus": "Active in local gatherings. Want to explore the region more and build better community tools.",
+      "next": "Plan one regional trip or adventure.",
+      "url": "https://coloft.org",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Local engagement is solid. Regional exploration and event capture tools are potential next projects." }
+      ]
+    },
+    {
+      "name": "Nature",
+      "type": "Dream",
+      "momentum": "dormant",
+      "focus": "Aspiring to live closer to the land. Plant identification, gardening, and fishing are the entry points.",
+      "next": "Pick one: find a plant ID walk, a community garden, or go fishing.",
+      "last_updated": "2026-03-31",
+      "log": [
+        { "date": "2026-03-31", "note": "Started tracking. Strong interest but no action yet. Permaculture and hunting are further out." }
+      ]
+    }
+  ]
+}
