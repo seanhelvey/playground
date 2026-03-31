@@ -3,19 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Playground</title>
+  <title>Lab</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: sans-serif;
-      max-width: 800px;
+      font-family: Georgia, serif;
+      background: #f9f6f0;
+      color: #2c2c2c;
+      max-width: 680px;
       margin: 80px auto;
-      padding: 0 20px;
-      color: #333;
+      padding: 0 24px;
+      line-height: 1.7;
     }
+    h1 { font-size: 1.4rem; font-weight: normal; letter-spacing: 0.05em; margin-bottom: 2rem; }
+    .tagline { color: #777; font-size: 0.95rem; margin-bottom: 3rem; }
+    section { margin-bottom: 2.5rem; }
+    section h2 { font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; }
+    section p { font-size: 0.95rem; color: #444; }
+    .status { display: inline-block; font-size: 0.75rem; color: #999; margin-left: 8px; }
   </style>
 </head>
 <body>
-  <h1>Playground</h1>
-  <p>Work in progress.</p>
+  <h1>Lab</h1>
+  <p class="tagline">A space for building, experimenting, and thinking out loud.</p>
+
+  <section>
+    <h2>Community <span class="status">brainstorming</span></h2>
+    <p>Exploring how transformational community work and regional organizing can be supported with better tools — events, coordination, shared memory.</p>
+  </section>
+
+  <section>
+    <h2>Nature <span class="status">brainstorming</span></h2>
+    <p>Living closer to the land. Permaculture, community farming, foraging, fishing. Less screen, more soil — with technology as a quiet aide rather than the point.</p>
+  </section>
+
+  <section>
+    <h2>Agentic Engineering <span class="status">active</span></h2>
+    <p>This repo as a practice loop: build something, push it, measure it, improve it. Each project a cycle. CI as a habit of mind.</p>
+  </section>
 </body>
 </html>
