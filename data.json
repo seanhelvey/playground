@@ -6,66 +6,72 @@
       "name": "Screen time",
       "type": "Core",
       "momentum": "steady",
-      "focus": "Tracking daily usage, protecting attention.",
-      "next": "Review weekly average and set a target.",
+      "focus": "Mobile tracking via iOS app is working. Real issue is desktop — work bleeding into evenings and weekends.",
+      "next": "Set a clear boundary for desktop work in evenings.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Awareness is the first step." }
+        { "date": "2026-03-31", "note": "Started tracking. Awareness is the first step." },
+        { "date": "2026-03-31", "note": "iOS app handles mobile. Desktop is the actual problem — need an evening/weekend boundary." }
       ]
     },
     {
       "name": "Meditation",
       "type": "Core",
-      "momentum": "steady",
-      "focus": "Maintaining a regular sitting practice.",
-      "next": "Lock in a consistent time of day.",
+      "momentum": "stalling",
+      "focus": "Slacked off for a week. Rebooting. Morning slot uncertain — been working better during agent runs at work.",
+      "next": "Restart tomorrow. Try meditating while an agent runs and see if that sticks.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Practice is established but not yet daily." }
+        { "date": "2026-03-31", "note": "Started tracking. Practice is established but not yet daily." },
+        { "date": "2026-03-31", "note": "Missed a week. Morning timing not ideal. Works well during agent runs at work — could be the move." }
       ]
     },
     {
       "name": "DM a friend",
       "type": "Core",
-      "momentum": "steady",
-      "focus": "Reaching out to one person daily.",
-      "next": "Keep it going for a full month and notice what shifts.",
+      "momentum": "stalling",
+      "focus": "Happens sometimes but not consistently. Needs more discipline.",
+      "next": "Send one DM today. Build the streak back.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Building the daily habit of intentional connection." }
+        { "date": "2026-03-31", "note": "Started tracking. Building the daily habit of intentional connection." },
+        { "date": "2026-03-31", "note": "Inconsistent. Happens but not daily. Need to recommit." }
       ]
     },
     {
       "name": "Fast after dinner",
       "type": "Habit",
-      "momentum": "rising",
-      "focus": "No eating after dinner. Building the pattern.",
-      "next": "Track consistency for two weeks.",
+      "momentum": "steady",
+      "focus": "Going well. Occasional breaks which seems healthy and fine.",
+      "next": "Keep going. Don't overthink the occasional exception.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. New habit, working on consistency." }
+        { "date": "2026-03-31", "note": "Started tracking. New habit, working on consistency." },
+        { "date": "2026-03-31", "note": "Mostly consistent. Breaking occasionally seems fine — not a problem." }
       ]
     },
     {
       "name": "Wake to alarm",
       "type": "Habit",
-      "momentum": "rising",
-      "focus": "Getting up when the alarm goes off, no snoozing.",
-      "next": "Set one consistent wake time and protect it.",
+      "momentum": "stalling",
+      "focus": "Lagged for a week or two. Restarting now.",
+      "next": "Set alarm for tomorrow. Get up when it goes off.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Working on discipline around morning routine." }
+        { "date": "2026-03-31", "note": "Started tracking. Working on discipline around morning routine." },
+        { "date": "2026-03-31", "note": "Fell off for 1-2 weeks. Recommitting today." }
       ]
     },
     {
       "name": "Dancing",
       "type": "Dream",
-      "momentum": "rising",
+      "momentum": "steady",
       "focus": "Active in 5Rhythms and learning swing. Want to explore latin styles.",
       "next": "Find a latin dance class or social.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Already practicing 5Rhythms and swing. Latin is the next frontier." }
+        { "date": "2026-03-31", "note": "Started tracking. Already practicing 5Rhythms and swing. Latin is the next frontier." },
+        { "date": "2026-03-31", "note": "Steady. No change." }
       ]
     },
     {
@@ -76,7 +82,8 @@
       "next": "Try one thing with voice — a class, a jam, anything.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Rhythm class is ongoing. Voice and instruments are aspirational." }
+        { "date": "2026-03-31", "note": "Started tracking. Rhythm class is ongoing. Voice and instruments are aspirational." },
+        { "date": "2026-03-31", "note": "Steady. No change." }
       ]
     },
     {
@@ -88,7 +95,8 @@
       "url": "https://coloft.org",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Local engagement is solid. Regional exploration and event capture tools are potential next projects." }
+        { "date": "2026-03-31", "note": "Started tracking. Local engagement is solid. Regional exploration and event capture tools are potential next projects." },
+        { "date": "2026-03-31", "note": "Steady. No change." }
       ]
     },
     {
@@ -99,7 +107,8 @@
       "next": "Pick one: find a plant ID walk, a community garden, or go fishing.",
       "last_updated": "2026-03-31",
       "log": [
-        { "date": "2026-03-31", "note": "Started tracking. Strong interest but no action yet. Permaculture and hunting are further out." }
+        { "date": "2026-03-31", "note": "Started tracking. Strong interest but no action yet. Permaculture and hunting are further out." },
+        { "date": "2026-03-31", "note": "Still dormant. No action." }
       ]
     }
   ]
