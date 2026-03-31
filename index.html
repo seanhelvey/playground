@@ -8,27 +8,74 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: Georgia, serif;
-      background: #f9f6f0;
-      color: #2c2c2c;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f1117;
+      color: #e2e4e9;
       max-width: 1060px;
-      margin: 48px auto;
-      padding: 0 20px;
+      margin: 0 auto;
+      padding: 40px 20px;
       line-height: 1.7;
     }
 
     h1 {
-      font-size: 1.4rem;
-      font-weight: normal;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .intro {
-      color: #666;
+      color: #9ca3af;
       font-size: 0.9rem;
       margin-bottom: 2rem;
-      max-width: 560px;
+    }
+
+    /* ── Check-in summary ── */
+    .checkin-bar {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      padding: 1rem 1.25rem;
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+    }
+
+    .checkin-bar .label {
+      color: #6b7280;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .checkin-bar .value {
+      color: #e2e4e9;
+      font-weight: 600;
+    }
+
+    .checkin-bar .score {
+      font-size: 1.1rem;
+    }
+
+    .score-high { color: #34d399; }
+    .score-mid  { color: #fbbf24; }
+    .score-low  { color: #f87171; }
+
+    .checkin-bar .word {
+      color: #a78bfa;
+      font-style: italic;
+    }
+
+    .checkin-empty {
+      color: #4b5563;
+      font-style: italic;
     }
 
     /* ── Table ── */
@@ -41,111 +88,157 @@
     thead th {
       text-align: left;
       font-size: 0.68rem;
-      font-weight: bold;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #999;
-      padding: 0.5rem 0.75rem;
-      background: #f2ede6;
-      border: 1px solid #ddd8d0;
-      cursor: default;
+      color: #6b7280;
+      padding: 0.6rem 0.75rem;
+      background: #1a1d27;
+      border-bottom: 2px solid #2a2d3a;
     }
 
     tbody tr.row {
       cursor: pointer;
+      transition: background 0.15s;
     }
 
     tbody tr.row:hover {
-      background: #f5f1ea;
+      background: #1a1d27;
     }
 
     tbody td {
-      padding: 0.7rem 0.75rem;
+      padding: 0.75rem 0.75rem;
       vertical-align: top;
-      border: 1px solid #ddd8d0;
-      color: #444;
+      border-bottom: 1px solid #1e2130;
+      color: #c9cdd5;
     }
 
     .col-name {
-      font-weight: bold;
-      color: #2c2c2c;
+      font-weight: 600;
+      color: #e2e4e9;
       white-space: nowrap;
+    }
+
+    .col-name a {
+      color: #60a5fa;
+      text-decoration: none;
+      margin-left: 4px;
+      font-size: 0.8em;
     }
 
     .col-type {
-      font-size: 0.72rem;
-      font-weight: bold;
+      font-size: 0.7rem;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: #aaa;
       white-space: nowrap;
     }
 
-    .col-momentum {
-      white-space: nowrap;
-    }
+    .type-core  { color: #f87171; }
+    .type-habit { color: #fbbf24; }
+    .type-dream { color: #a78bfa; }
+    .type-goal  { color: #34d399; }
 
-    .momentum-rising  { color: #4a8c5c; }
-    .momentum-steady  { color: #8a7a3a; }
-    .momentum-stalling { color: #b07040; }
-    .momentum-dormant { color: #aaa; }
+    .col-momentum { white-space: nowrap; }
+    .momentum-rising   { color: #34d399; }
+    .momentum-steady   { color: #60a5fa; }
+    .momentum-stalling { color: #fbbf24; }
+    .momentum-dormant  { color: #4b5563; }
 
     .col-updated {
       white-space: nowrap;
-      color: #999;
+      color: #4b5563;
       font-size: 0.82rem;
     }
 
-    a { color: #2c2c2c; }
-
-    /* ── Expanded log row ── */
-    tr.log-row td {
-      background: #f5f2ec;
-      padding: 0.5rem 0.75rem 0.75rem;
-      border-top: none;
+    .col-milestones {
+      font-size: 0.82rem;
     }
 
-    .log-container {
-      padding-left: 0.5rem;
+    .milestone-tag {
+      display: inline-block;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.75rem;
+      color: #34d399;
+      margin: 1px 2px;
     }
 
-    .log-title {
+    /* ── Expanded row ── */
+    tr.detail-row td {
+      background: #141620;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #1e2130;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .detail-section {
+      padding: 0;
+    }
+
+    .detail-label {
       font-size: 0.68rem;
-      font-weight: bold;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #bbb;
-      margin-bottom: 0.4rem;
+      color: #6b7280;
+      margin-bottom: 0.3rem;
+    }
+
+    .detail-text {
+      font-size: 0.88rem;
+      color: #c9cdd5;
     }
 
     .log-entry {
-      font-size: 0.85rem;
-      color: #666;
-      margin-bottom: 0.25rem;
+      font-size: 0.84rem;
+      color: #9ca3af;
+      margin-bottom: 0.35rem;
     }
 
     .log-date {
-      color: #aaa;
-      margin-right: 0.5rem;
+      color: #4b5563;
+      margin-right: 0.4rem;
+    }
+
+    .log-rec {
+      color: #60a5fa;
+    }
+
+    .log-rec::before {
+      content: "→ ";
+      color: #60a5fa;
     }
 
     .hidden { display: none; }
 
     /* ── Mobile ── */
     @media (max-width: 700px) {
-      body { margin: 28px auto; }
+      body { padding: 24px 16px; }
       table, thead, tbody, tr, td { display: block; width: 100%; }
       thead { display: none; }
 
+      .checkin-bar {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
       tbody tr.row {
-        background: #fff;
-        border: 1px solid #ddd8d0;
-        border-radius: 6px;
+        background: #1a1d27;
+        border: 1px solid #2a2d3a;
+        border-radius: 8px;
         margin-bottom: 0.75rem;
         padding: 0.8rem 1rem;
       }
 
-      tbody tr.row:hover { background: #fff; }
+      tbody tr.row:hover { background: #1a1d27; }
 
       tbody tr.row td {
         border: none;
@@ -158,51 +251,39 @@
       }
 
       .col-type { display: inline; }
-      .col-momentum { display: inline; margin-left: 0.4rem; }
+      .col-momentum { display: inline; margin-left: 0.5rem; }
 
-      .mobile-meta {
-        margin-bottom: 0.4rem;
-      }
-
-      td.col-focus::before {
-        content: "Focus — ";
-        font-size: 0.7rem;
-        font-weight: bold;
+      td.col-focus::before,
+      td.col-next::before,
+      td.col-updated::before,
+      td.col-milestones::before {
+        font-size: 0.65rem;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: #bbb;
+        color: #4b5563;
+        margin-right: 0.3rem;
       }
 
-      td.col-next::before {
-        content: "Next — ";
-        font-size: 0.7rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: #bbb;
-      }
+      td.col-focus::before { content: "Focus — "; }
+      td.col-next::before { content: "Next — "; }
+      td.col-updated::before { content: "Updated — "; }
+      td.col-milestones::before { content: "Milestones — "; }
 
-      td.col-updated::before {
-        content: "Updated — ";
-        font-size: 0.7rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: #bbb;
-      }
-
-      tr.log-row {
-        background: #fff;
-        border: 1px solid #ddd8d0;
-        border-top: none;
-        border-radius: 0 0 6px 6px;
+      tr.detail-row {
         margin-top: -0.75rem;
         margin-bottom: 0.75rem;
       }
 
-      tr.log-row td {
-        border: none;
-        padding: 0.5rem 1rem 0.75rem;
+      tr.detail-row td {
+        border: 1px solid #2a2d3a;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        padding: 0.75rem 1rem;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -210,7 +291,11 @@
 <body>
 
   <h1>Playground</h1>
-  <p class="intro">A personal flywheel for habits, dreams, and projects. Build, act, learn, repeat.</p>
+  <p class="intro">A personal flywheel — habits, dreams, and projects. Build, act, learn, repeat.</p>
+
+  <div class="checkin-bar" id="checkin-bar">
+    <span class="checkin-empty">No check-in yet. Tell Claude how you're doing.</span>
+  </div>
 
   <table>
     <thead>
@@ -220,6 +305,7 @@
         <th>Momentum</th>
         <th>Focus</th>
         <th>Next</th>
+        <th>Milestones</th>
         <th>Updated</th>
       </tr>
     </thead>
@@ -240,57 +326,118 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
+    function scoreClass(n) {
+      if (n >= 7) return 'score-high';
+      if (n >= 4) return 'score-mid';
+      return 'score-low';
+    }
+
+    function renderCheckin(data) {
+      const bar = document.getElementById('checkin-bar');
+      const checkins = data.check_ins || [];
+      const latest = checkins[checkins.length - 1];
+
+      if (!latest || (!latest.body && !latest.mind && !latest.social && !latest.feeling)) {
+        return;
+      }
+
+      let html = '';
+
+      if (latest.body != null) {
+        html += `<div><span class="label">Body</span><span class="value score ${scoreClass(latest.body)}">${latest.body}/10</span></div>`;
+      }
+      if (latest.mind != null) {
+        html += `<div><span class="label">Mind</span><span class="value score ${scoreClass(latest.mind)}">${latest.mind}/10</span></div>`;
+      }
+      if (latest.social != null) {
+        html += `<div><span class="label">Social</span><span class="value score ${scoreClass(latest.social)}">${latest.social}/10</span></div>`;
+      }
+      if (latest.feeling) {
+        html += `<div><span class="label">Feeling</span><span class="value word">${latest.feeling}</span></div>`;
+      }
+      if (latest.more_of) {
+        html += `<div><span class="label">More of</span><span class="value">${latest.more_of}</span></div>`;
+      }
+      if (latest.less_of) {
+        html += `<div><span class="label">Less of</span><span class="value">${latest.less_of}</span></div>`;
+      }
+
+      html += `<div><span class="label">Date</span><span class="value" style="color:#4b5563">${formatDate(latest.date)}</span></div>`;
+
+      bar.innerHTML = html;
+    }
+
     function renderRow(item) {
       const arrow = MOMENTUM_ARROWS[item.momentum] || '·';
       const momentumClass = 'momentum-' + item.momentum;
+      const typeClass = 'type-' + item.type.toLowerCase();
       const nameExtra = item.url
         ? ` <a href="${item.url}" target="_blank">↗</a>`
         : '';
+
+      const milestoneHtml = (item.milestones || [])
+        .map(m => `<span class="milestone-tag">${m.label}</span>`)
+        .join('');
 
       const row = document.createElement('tr');
       row.className = 'row';
       row.innerHTML = `
         <td class="col-name">${item.name}${nameExtra}</td>
-        <td class="col-type">${item.type}</td>
+        <td class="col-type ${typeClass}">${item.type}</td>
         <td class="col-momentum ${momentumClass}">${arrow} ${item.momentum}</td>
         <td class="col-focus">${item.focus}</td>
         <td class="col-next">${item.next}</td>
+        <td class="col-milestones">${milestoneHtml || '<span style="color:#2a2d3a">—</span>'}</td>
         <td class="col-updated">${formatDate(item.last_updated)}</td>
       `;
 
-      const logRow = document.createElement('tr');
-      logRow.className = 'log-row hidden';
+      const detailRow = document.createElement('tr');
+      detailRow.className = 'detail-row hidden';
+
       const logEntries = (item.log || [])
         .slice()
         .reverse()
-        .map(e => `<div class="log-entry"><span class="log-date">${formatDate(e.date)}</span>${e.note}</div>`)
+        .map(e => {
+          const isRec = e.type === 'recommendation';
+          return `<div class="log-entry ${isRec ? 'log-rec' : ''}"><span class="log-date">${formatDate(e.date)}</span>${e.note}</div>`;
+        })
         .join('');
 
-      logRow.innerHTML = `
-        <td colspan="6">
-          <div class="log-container">
-            <div class="log-title">Log</div>
-            ${logEntries || '<div class="log-entry">No entries yet.</div>'}
+      detailRow.innerHTML = `
+        <td colspan="7">
+          <div class="detail-grid">
+            <div class="detail-section">
+              <div class="detail-label">Log</div>
+              ${logEntries || '<div class="log-entry" style="color:#4b5563">No entries yet.</div>'}
+            </div>
+            <div class="detail-section">
+              <div class="detail-label">Milestones</div>
+              ${(item.milestones || []).length
+                ? item.milestones.map(m => `<div class="log-entry"><span class="log-date">${formatDate(m.date)}</span><span style="color:#34d399">${m.label}</span></div>`).join('')
+                : '<div class="log-entry" style="color:#4b5563">None yet — keep going.</div>'
+              }
+            </div>
           </div>
         </td>
       `;
 
       row.addEventListener('click', function(e) {
         if (e.target.tagName === 'A') return;
-        logRow.classList.toggle('hidden');
+        detailRow.classList.toggle('hidden');
       });
 
-      return [row, logRow];
+      return [row, detailRow];
     }
 
     fetch('data.json')
       .then(r => r.json())
       .then(data => {
+        renderCheckin(data);
         const tbody = document.getElementById('tracker-body');
         data.items.forEach(item => {
-          const [row, logRow] = renderRow(item);
+          const [row, detailRow] = renderRow(item);
           tbody.appendChild(row);
-          tbody.appendChild(logRow);
+          tbody.appendChild(detailRow);
         });
       })
       .catch(err => {
