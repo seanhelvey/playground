@@ -28,7 +28,7 @@
     }
 
     .intro {
-      color: #9ca3af;
+      color: #b0b5bd;
       font-size: 0.9rem;
       margin-bottom: 2rem;
     }
@@ -38,7 +38,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: #6b7280;
+      color: #8b93a1;
       margin: 2.5rem 0 0.75rem;
     }
 
@@ -56,7 +56,7 @@
     }
 
     .checkin-bar .label {
-      color: #6b7280;
+      color: #8b93a1;
       font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -74,7 +74,7 @@
     .score-mid  { color: #fbbf24; }
     .score-low  { color: #f87171; }
     .checkin-bar .word { color: #a78bfa; font-style: italic; }
-    .checkin-empty { color: #4b5563; font-style: italic; }
+    .checkin-empty { color: #7a8290; font-style: italic; }
 
     /* ── Table ── */
     table {
@@ -89,7 +89,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #6b7280;
+      color: #8b93a1;
       padding: 0.6rem 0.75rem;
       background: #1a1d27;
       border-bottom: 2px solid #2a2d3a;
@@ -139,11 +139,11 @@
     .momentum-rising   { color: #34d399; }
     .momentum-steady   { color: #60a5fa; }
     .momentum-stalling { color: #fbbf24; }
-    .momentum-dormant  { color: #4b5563; }
+    .momentum-dormant  { color: #7a8290; }
 
     .col-updated {
       white-space: nowrap;
-      color: #4b5563;
+      color: #7a8290;
       font-size: 0.82rem;
     }
 
@@ -184,7 +184,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #6b7280;
+      color: #8b93a1;
       margin-bottom: 0.3rem;
     }
 
@@ -196,11 +196,11 @@
 
     .log-entry {
       font-size: 0.84rem;
-      color: #9ca3af;
+      color: #b0b5bd;
       margin-bottom: 0.35rem;
     }
 
-    .log-date { color: #4b5563; margin-right: 0.4rem; }
+    .log-date { color: #7a8290; margin-right: 0.4rem; }
     .log-rec { color: #60a5fa; }
     .log-rec::before { content: "\2192 "; color: #60a5fa; }
 
@@ -237,7 +237,7 @@
 
     .task-related {
       font-size: 0.75rem;
-      color: #4b5563;
+      color: #7a8290;
       margin-left: 0.4rem;
     }
 
@@ -272,7 +272,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: #4b5563;
+        color: #7a8290;
         margin-right: 0.3rem;
       }
 
@@ -355,7 +355,7 @@
       if (latest.feeling) html += `<div><span class="label">Feeling</span><span class="value word">${latest.feeling}</span></div>`;
       if (latest.more_of) html += `<div><span class="label">More of</span><span class="value">${latest.more_of}</span></div>`;
       if (latest.less_of) html += `<div><span class="label">Less of</span><span class="value">${latest.less_of}</span></div>`;
-      html += `<div><span class="label">Date</span><span class="value" style="color:#4b5563">${formatDate(latest.date)}</span></div>`;
+      html += `<div><span class="label">Date</span><span class="value" style="color:#7a8290">${formatDate(latest.date)}</span></div>`;
       bar.innerHTML = html;
     }
 
@@ -397,13 +397,13 @@
             <div class="detail-label">Success criteria</div>
             <div class="detail-text">${item.success_criteria}</div>
             <div class="detail-label">Log</div>
-            ${logEntries || '<div class="log-entry" style="color:#4b5563">No entries yet.</div>'}
+            ${logEntries || '<div class="log-entry" style="color:#7a8290">No entries yet.</div>'}
           </div>`;
       } else {
         detailHtml += `
           <div>
             <div class="detail-label">Log</div>
-            ${logEntries || '<div class="log-entry" style="color:#4b5563">No entries yet.</div>'}
+            ${logEntries || '<div class="log-entry" style="color:#7a8290">No entries yet.</div>'}
           </div>`;
       }
 
@@ -412,7 +412,7 @@
           <div class="detail-label">Milestones</div>
           ${(item.milestones || []).length
             ? item.milestones.map(m => `<div class="log-entry"><span class="log-date">${formatDate(m.date)}</span><span style="color:#34d399">${m.label}</span></div>`).join('')
-            : '<div class="log-entry" style="color:#4b5563">None yet \u2014 keep going.</div>'
+            : '<div class="log-entry" style="color:#7a8290">None yet \u2014 keep going.</div>'
           }
         </div>
       </div>`;
