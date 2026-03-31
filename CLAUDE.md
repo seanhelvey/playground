@@ -6,6 +6,13 @@ A personal flywheel for habits, dreams, and projects. The source of truth is `da
 - Push directly to `main`, no branches.
 - Commit and push after updating data.
 
+## Local preview
+The page fetches `data.json` via JS, which won't work from `file://`. To preview locally:
+```
+python3 -m http.server 8000
+```
+Then open `http://localhost:8000`. GitHub Pages serves it fine — this is only needed for local dev.
+
 ## Data model
 - `data.json` contains an array of items, each with: name, type, momentum, focus, next, and a log array.
 - **Types**: Core (daily non-negotiables), Habit (daily practices being built), Dream (bigger aspirations being explored).
