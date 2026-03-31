@@ -126,6 +126,78 @@
         { "date": "2026-03-31", "type": "recommendation", "note": "Fishing: Buy CA license, grab light tackle, try Del Norte Street Pier (Eureka) for redtail perch — in season now." },
         { "date": "2026-03-31", "type": "recommendation", "note": "Gardening: First Saturday native gardening in Old Town Eureka (11:30am, 2nd & F St). Join Humboldt Permaculture Guild mailing list at humboldtpermaculture.org." }
       ]
+    },
+    {
+      "name": "Own a home",
+      "type": "Goal",
+      "momentum": "dormant",
+      "focus": "Want to buy a home in the next year.",
+      "next": "Research first-time buyer programs and get pre-approved.",
+      "target_date": "2027-03-31",
+      "success_criteria": "Keys in hand.",
+      "last_updated": "2026-03-31",
+      "milestones": [],
+      "log": [
+        { "date": "2026-03-31", "note": "Goal set. Target: 1 year. No action yet." }
+      ]
+    },
+    {
+      "name": "Build fallback income",
+      "type": "Goal",
+      "momentum": "dormant",
+      "focus": "Want financial security beyond a tech job. Could be a side business, freelance path, or something non-tech.",
+      "next": "Identify 2-3 directions worth exploring.",
+      "target_date": "2031-03-31",
+      "success_criteria": "Reliable income stream independent of primary tech job.",
+      "last_updated": "2026-03-31",
+      "milestones": [],
+      "log": [
+        { "date": "2026-03-31", "note": "Goal set. Target: 5 years. Wide open — need to narrow directions." }
+      ]
+    },
+    {
+      "name": "Deploy a full-stack project",
+      "type": "Goal",
+      "momentum": "dormant",
+      "focus": "Ship a real project with a database and a framework other than Django. Part of the flywheel practice.",
+      "next": "Pick a framework and scaffold something.",
+      "target_date": "2026-09-30",
+      "success_criteria": "Live site, database, non-Django framework, real users or real utility.",
+      "last_updated": "2026-03-31",
+      "milestones": [],
+      "log": [
+        { "date": "2026-03-31", "note": "Goal set. Target: 6 months. Interested in Rust or Go. Could be the event flyer tool or something else." }
+      ]
+    },
+    {
+      "name": "Contribute to non-Django OSS",
+      "type": "Goal",
+      "momentum": "dormant",
+      "focus": "Get a merged PR in an open source project outside the Django ecosystem.",
+      "next": "Find a Rust, Go, or agentic tooling project and open a first issue or PR.",
+      "target_date": "2026-07-31",
+      "success_criteria": "Merged PR in a non-Django open source project.",
+      "last_updated": "2026-03-31",
+      "milestones": [],
+      "log": [
+        { "date": "2026-03-31", "note": "Goal set. Target: 4 months. Interested in Rust, Go, or agentic engineering tooling." }
+      ]
+    },
+    {
+      "name": "Stick with the process",
+      "type": "Goal",
+      "momentum": "rising",
+      "focus": "Use this flywheel every week for 3 months. Prove the system works.",
+      "next": "Complete week 1 check-in by April 6.",
+      "target_date": "2026-06-30",
+      "success_criteria": "12 consecutive weekly check-ins logged.",
+      "last_updated": "2026-03-31",
+      "milestones": [
+        { "date": "2026-03-31", "label": "System built and deployed" }
+      ],
+      "log": [
+        { "date": "2026-03-31", "note": "Goal set. Target: 12 weeks. Week 0 — system launched today." }
+      ]
     }
   ]
 }

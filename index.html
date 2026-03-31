@@ -33,6 +33,15 @@
       margin-bottom: 2rem;
     }
 
+    h2 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6b7280;
+      margin: 2.5rem 0 0.75rem;
+    }
+
     /* ── Check-in summary ── */
     .checkin-bar {
       display: flex;
@@ -42,7 +51,7 @@
       background: #1a1d27;
       border: 1px solid #2a2d3a;
       border-radius: 10px;
-      margin-bottom: 2rem;
+      margin-bottom: 0.5rem;
       font-size: 0.85rem;
     }
 
@@ -60,23 +69,12 @@
       font-weight: 600;
     }
 
-    .checkin-bar .score {
-      font-size: 1.1rem;
-    }
-
+    .checkin-bar .score { font-size: 1.1rem; }
     .score-high { color: #34d399; }
     .score-mid  { color: #fbbf24; }
     .score-low  { color: #f87171; }
-
-    .checkin-bar .word {
-      color: #a78bfa;
-      font-style: italic;
-    }
-
-    .checkin-empty {
-      color: #4b5563;
-      font-style: italic;
-    }
+    .checkin-bar .word { color: #a78bfa; font-style: italic; }
+    .checkin-empty { color: #4b5563; font-style: italic; }
 
     /* ── Table ── */
     table {
@@ -102,9 +100,7 @@
       transition: background 0.15s;
     }
 
-    tbody tr.row:hover {
-      background: #1a1d27;
-    }
+    tbody tr.row:hover { background: #1a1d27; }
 
     tbody td {
       padding: 0.75rem 0.75rem;
@@ -151,9 +147,7 @@
       font-size: 0.82rem;
     }
 
-    .col-milestones {
-      font-size: 0.82rem;
-    }
+    .col-milestones { font-size: 0.82rem; }
 
     .milestone-tag {
       display: inline-block;
@@ -166,7 +160,13 @@
       margin: 1px 2px;
     }
 
-    /* ── Expanded row ── */
+    .col-target {
+      white-space: nowrap;
+      font-size: 0.82rem;
+      color: #60a5fa;
+    }
+
+    /* ── Expanded detail row ── */
     tr.detail-row td {
       background: #141620;
       padding: 0.75rem 1rem;
@@ -177,10 +177,6 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
-    }
-
-    .detail-section {
-      padding: 0;
     }
 
     .detail-label {
@@ -195,6 +191,7 @@
     .detail-text {
       font-size: 0.88rem;
       color: #c9cdd5;
+      margin-bottom: 0.75rem;
     }
 
     .log-entry {
@@ -203,21 +200,46 @@
       margin-bottom: 0.35rem;
     }
 
-    .log-date {
-      color: #4b5563;
-      margin-right: 0.4rem;
-    }
-
-    .log-rec {
-      color: #60a5fa;
-    }
-
-    .log-rec::before {
-      content: "→ ";
-      color: #60a5fa;
-    }
+    .log-date { color: #4b5563; margin-right: 0.4rem; }
+    .log-rec { color: #60a5fa; }
+    .log-rec::before { content: "\2192 "; color: #60a5fa; }
 
     .hidden { display: none; }
+
+    /* ── Tasks ── */
+    .task-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #1e2130;
+      font-size: 0.88rem;
+      color: #c9cdd5;
+    }
+
+    .task-item:hover { background: #1a1d27; }
+
+    .task-status {
+      flex-shrink: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 8px;
+    }
+
+    .task-status-pending { background: #fbbf24; }
+    .task-status-done { background: #34d399; }
+
+    .task-related {
+      font-size: 0.75rem;
+      color: #4b5563;
+      margin-left: 0.4rem;
+    }
 
     /* ── Mobile ── */
     @media (max-width: 700px) {
@@ -225,10 +247,7 @@
       table, thead, tbody, tr, td { display: block; width: 100%; }
       thead { display: none; }
 
-      .checkin-bar {
-        flex-direction: column;
-        gap: 0.75rem;
-      }
+      .checkin-bar { flex-direction: column; gap: 0.75rem; }
 
       tbody tr.row {
         background: #1a1d27;
@@ -239,24 +258,16 @@
       }
 
       tbody tr.row:hover { background: #1a1d27; }
-
-      tbody tr.row td {
-        border: none;
-        padding: 0.15rem 0;
-      }
-
-      .col-name {
-        font-size: 1.05rem;
-        margin-bottom: 0.3rem;
-      }
-
+      tbody tr.row td { border: none; padding: 0.15rem 0; }
+      .col-name { font-size: 1.05rem; margin-bottom: 0.3rem; }
       .col-type { display: inline; }
       .col-momentum { display: inline; margin-left: 0.5rem; }
 
       td.col-focus::before,
       td.col-next::before,
       td.col-updated::before,
-      td.col-milestones::before {
+      td.col-milestones::before,
+      td.col-target::before {
         font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
@@ -265,38 +276,33 @@
         margin-right: 0.3rem;
       }
 
-      td.col-focus::before { content: "Focus — "; }
-      td.col-next::before { content: "Next — "; }
-      td.col-updated::before { content: "Updated — "; }
-      td.col-milestones::before { content: "Milestones — "; }
+      td.col-focus::before { content: "Focus \2014 "; }
+      td.col-next::before { content: "Next \2014 "; }
+      td.col-updated::before { content: "Updated \2014 "; }
+      td.col-milestones::before { content: "Milestones \2014 "; }
+      td.col-target::before { content: "Target \2014 "; }
 
-      tr.detail-row {
-        margin-top: -0.75rem;
-        margin-bottom: 0.75rem;
-      }
-
+      tr.detail-row { margin-top: -0.75rem; margin-bottom: 0.75rem; }
       tr.detail-row td {
         border: 1px solid #2a2d3a;
         border-top: none;
         border-radius: 0 0 8px 8px;
         padding: 0.75rem 1rem;
       }
-
-      .detail-grid {
-        grid-template-columns: 1fr;
-      }
+      .detail-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
   <h1>Playground</h1>
-  <p class="intro">A personal flywheel — habits, dreams, and projects. Build, act, learn, repeat.</p>
+  <p class="intro">A personal flywheel for habits, dreams, goals, and projects. Build, act, learn, repeat.</p>
 
   <div class="checkin-bar" id="checkin-bar">
     <span class="checkin-empty">No check-in yet. Tell Claude how you're doing.</span>
   </div>
 
+  <h2>Tracker</h2>
   <table>
     <thead>
       <tr>
@@ -306,24 +312,28 @@
         <th>Focus</th>
         <th>Next</th>
         <th>Milestones</th>
+        <th>Target</th>
         <th>Updated</th>
       </tr>
     </thead>
-    <tbody id="tracker-body">
-    </tbody>
+    <tbody id="tracker-body"></tbody>
   </table>
 
+  <h2>Tasks</h2>
+  <ul class="task-list" id="task-list"></ul>
+
   <script>
-    const MOMENTUM_ARROWS = {
-      rising: '↑',
-      steady: '→',
-      stalling: '↓',
-      dormant: '·'
-    };
+    const MOMENTUM_ARROWS = { rising: '\u2191', steady: '\u2192', stalling: '\u2193', dormant: '\u00b7' };
 
     function formatDate(dateStr) {
       const d = new Date(dateStr + 'T00:00:00');
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function formatTargetDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     }
 
     function scoreClass(n) {
@@ -336,48 +346,26 @@
       const bar = document.getElementById('checkin-bar');
       const checkins = data.check_ins || [];
       const latest = checkins[checkins.length - 1];
-
-      if (!latest || (!latest.body && !latest.mind && !latest.social && !latest.feeling)) {
-        return;
-      }
+      if (!latest || (!latest.body && !latest.mind && !latest.social && !latest.feeling)) return;
 
       let html = '';
-
-      if (latest.body != null) {
-        html += `<div><span class="label">Body</span><span class="value score ${scoreClass(latest.body)}">${latest.body}/10</span></div>`;
-      }
-      if (latest.mind != null) {
-        html += `<div><span class="label">Mind</span><span class="value score ${scoreClass(latest.mind)}">${latest.mind}/10</span></div>`;
-      }
-      if (latest.social != null) {
-        html += `<div><span class="label">Social</span><span class="value score ${scoreClass(latest.social)}">${latest.social}/10</span></div>`;
-      }
-      if (latest.feeling) {
-        html += `<div><span class="label">Feeling</span><span class="value word">${latest.feeling}</span></div>`;
-      }
-      if (latest.more_of) {
-        html += `<div><span class="label">More of</span><span class="value">${latest.more_of}</span></div>`;
-      }
-      if (latest.less_of) {
-        html += `<div><span class="label">Less of</span><span class="value">${latest.less_of}</span></div>`;
-      }
-
+      if (latest.body != null) html += `<div><span class="label">Body</span><span class="value score ${scoreClass(latest.body)}">${latest.body}/10</span></div>`;
+      if (latest.mind != null) html += `<div><span class="label">Mind</span><span class="value score ${scoreClass(latest.mind)}">${latest.mind}/10</span></div>`;
+      if (latest.social != null) html += `<div><span class="label">Social</span><span class="value score ${scoreClass(latest.social)}">${latest.social}/10</span></div>`;
+      if (latest.feeling) html += `<div><span class="label">Feeling</span><span class="value word">${latest.feeling}</span></div>`;
+      if (latest.more_of) html += `<div><span class="label">More of</span><span class="value">${latest.more_of}</span></div>`;
+      if (latest.less_of) html += `<div><span class="label">Less of</span><span class="value">${latest.less_of}</span></div>`;
       html += `<div><span class="label">Date</span><span class="value" style="color:#4b5563">${formatDate(latest.date)}</span></div>`;
-
       bar.innerHTML = html;
     }
 
     function renderRow(item) {
-      const arrow = MOMENTUM_ARROWS[item.momentum] || '·';
+      const arrow = MOMENTUM_ARROWS[item.momentum] || '\u00b7';
       const momentumClass = 'momentum-' + item.momentum;
       const typeClass = 'type-' + item.type.toLowerCase();
-      const nameExtra = item.url
-        ? ` <a href="${item.url}" target="_blank">↗</a>`
-        : '';
-
-      const milestoneHtml = (item.milestones || [])
-        .map(m => `<span class="milestone-tag">${m.label}</span>`)
-        .join('');
+      const nameExtra = item.url ? ` <a href="${item.url}" target="_blank">\u2197</a>` : '';
+      const milestoneHtml = (item.milestones || []).map(m => `<span class="milestone-tag">${m.label}</span>`).join('');
+      const targetHtml = item.target_date ? formatTargetDate(item.target_date) : '';
 
       const row = document.createElement('tr');
       row.className = 'row';
@@ -387,39 +375,49 @@
         <td class="col-momentum ${momentumClass}">${arrow} ${item.momentum}</td>
         <td class="col-focus">${item.focus}</td>
         <td class="col-next">${item.next}</td>
-        <td class="col-milestones">${milestoneHtml || '<span style="color:#2a2d3a">—</span>'}</td>
+        <td class="col-milestones">${milestoneHtml || '<span style="color:#2a2d3a">\u2014</span>'}</td>
+        <td class="col-target">${targetHtml || '<span style="color:#2a2d3a">\u2014</span>'}</td>
         <td class="col-updated">${formatDate(item.last_updated)}</td>
       `;
 
       const detailRow = document.createElement('tr');
       detailRow.className = 'detail-row hidden';
 
-      const logEntries = (item.log || [])
-        .slice()
-        .reverse()
+      const logEntries = (item.log || []).slice().reverse()
         .map(e => {
           const isRec = e.type === 'recommendation';
           return `<div class="log-entry ${isRec ? 'log-rec' : ''}"><span class="log-date">${formatDate(e.date)}</span>${e.note}</div>`;
-        })
-        .join('');
+        }).join('');
 
-      detailRow.innerHTML = `
-        <td colspan="7">
-          <div class="detail-grid">
-            <div class="detail-section">
-              <div class="detail-label">Log</div>
-              ${logEntries || '<div class="log-entry" style="color:#4b5563">No entries yet.</div>'}
-            </div>
-            <div class="detail-section">
-              <div class="detail-label">Milestones</div>
-              ${(item.milestones || []).length
-                ? item.milestones.map(m => `<div class="log-entry"><span class="log-date">${formatDate(m.date)}</span><span style="color:#34d399">${m.label}</span></div>`).join('')
-                : '<div class="log-entry" style="color:#4b5563">None yet — keep going.</div>'
-              }
-            </div>
-          </div>
-        </td>
-      `;
+      let detailHtml = '<div class="detail-grid">';
+
+      if (item.success_criteria) {
+        detailHtml += `
+          <div>
+            <div class="detail-label">Success criteria</div>
+            <div class="detail-text">${item.success_criteria}</div>
+            <div class="detail-label">Log</div>
+            ${logEntries || '<div class="log-entry" style="color:#4b5563">No entries yet.</div>'}
+          </div>`;
+      } else {
+        detailHtml += `
+          <div>
+            <div class="detail-label">Log</div>
+            ${logEntries || '<div class="log-entry" style="color:#4b5563">No entries yet.</div>'}
+          </div>`;
+      }
+
+      detailHtml += `
+        <div>
+          <div class="detail-label">Milestones</div>
+          ${(item.milestones || []).length
+            ? item.milestones.map(m => `<div class="log-entry"><span class="log-date">${formatDate(m.date)}</span><span style="color:#34d399">${m.label}</span></div>`).join('')
+            : '<div class="log-entry" style="color:#4b5563">None yet \u2014 keep going.</div>'
+          }
+        </div>
+      </div>`;
+
+      detailRow.innerHTML = `<td colspan="8">${detailHtml}</td>`;
 
       row.addEventListener('click', function(e) {
         if (e.target.tagName === 'A') return;
@@ -429,20 +427,33 @@
       return [row, detailRow];
     }
 
-    fetch('data.json')
-      .then(r => r.json())
-      .then(data => {
-        renderCheckin(data);
-        const tbody = document.getElementById('tracker-body');
-        data.items.forEach(item => {
-          const [row, detailRow] = renderRow(item);
-          tbody.appendChild(row);
-          tbody.appendChild(detailRow);
-        });
-      })
-      .catch(err => {
-        console.error('Failed to load data.json:', err);
+    function renderTasks(tasks) {
+      const list = document.getElementById('task-list');
+      tasks.forEach(t => {
+        const li = document.createElement('li');
+        li.className = 'task-item';
+        const statusClass = t.status === 'done' ? 'task-status-done' : 'task-status-pending';
+        const related = t.related ? `<span class="task-related">${t.related}</span>` : '';
+        li.innerHTML = `<span class="task-status ${statusClass}"></span><span>${t.task}${related}</span>`;
+        list.appendChild(li);
       });
+    }
+
+    Promise.all([
+      fetch('data.json').then(r => r.json()),
+      fetch('tasks.json').then(r => r.json())
+    ]).then(([data, taskData]) => {
+      renderCheckin(data);
+      const tbody = document.getElementById('tracker-body');
+      data.items.forEach(item => {
+        const [row, detailRow] = renderRow(item);
+        tbody.appendChild(row);
+        tbody.appendChild(detailRow);
+      });
+      renderTasks(taskData.tasks.filter(t => t.status !== 'done'));
+    }).catch(err => {
+      console.error('Failed to load data:', err);
+    });
   </script>
 
 </body>

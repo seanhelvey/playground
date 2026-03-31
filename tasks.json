@@ -1,0 +1,67 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "task": "Set up /schedule weekly check-in agent",
+      "status": "pending",
+      "related": "Stick with the process",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 2,
+      "task": "Build sparkline visualizations for check-in scores over time",
+      "status": "pending",
+      "related": null,
+      "created": "2026-03-31"
+    },
+    {
+      "id": 3,
+      "task": "Research and refresh targeted recommendations for Nature (fishing, gardening — Humboldt specific, seasonal)",
+      "status": "pending",
+      "related": "Nature",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 4,
+      "task": "Research latin dance classes in Humboldt area",
+      "status": "pending",
+      "related": "Dancing",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 5,
+      "task": "Research voice classes or choirs in Humboldt area",
+      "status": "pending",
+      "related": "Music",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 6,
+      "task": "Research first-time homebuyer programs in Humboldt County",
+      "status": "pending",
+      "related": "Own a home",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 7,
+      "task": "Evaluate Rust vs Go vs other frameworks for full-stack project",
+      "status": "pending",
+      "related": "Deploy a full-stack project",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 8,
+      "task": "Find candidate open source projects (Rust, Go, or agentic tooling) to contribute to",
+      "status": "pending",
+      "related": "Contribute to non-Django OSS",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 9,
+      "task": "Complete first weekly check-in by April 6",
+      "status": "pending",
+      "related": "Stick with the process",
+      "created": "2026-03-31"
+    }
+  ]
+}
