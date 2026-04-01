@@ -188,16 +188,17 @@
       "name": "Stick with the process",
       "type": "Goal",
       "momentum": "rising",
-      "focus": "Use this flywheel every week for 3 months. Prove the system works.",
-      "next": "Complete week 1 check-in by April 6.",
-      "target_date": "2026-06-30",
-      "success_criteria": "12 consecutive weekly check-ins logged.",
-      "last_updated": "2026-03-31",
+      "focus": "Tracked as a system health metric now, not a standalone goal.",
+      "next": null,
+      "target_date": null,
+      "success_criteria": null,
+      "last_updated": "2026-04-01",
       "milestones": [
         { "date": "2026-03-31", "label": "System built and deployed" }
       ],
       "log": [
-        { "date": "2026-03-31", "note": "Goal set. Target: 12 weeks. Week 0 — system launched today." }
+        { "date": "2026-03-31", "note": "Goal set. Target: 12 weeks. Week 0 — system launched today." },
+        { "date": "2026-04-01", "note": "Moved to system health metric. Check-in streak tracked at system level, not as a life goal." }
       ]
     }
   ]
