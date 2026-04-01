@@ -85,6 +85,13 @@
       "created": "2026-03-31"
     },
     {
+      "id": 19,
+      "task": "Improve task display — agent backlog should be visible and clear, not lost at the bottom",
+      "status": "done",
+      "related": null,
+      "created": "2026-04-01"
+    },
+    {
       "id": 13,
       "task": "Research latin dance classes in Humboldt area",
       "status": "done",

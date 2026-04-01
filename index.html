@@ -357,13 +357,13 @@
     <tbody id="tracker-body"></tbody>
   </table>
 
+  <h2 id="tasks-header">Agent Backlog</h2>
+  <div id="task-container"></div>
+
   <div id="wins-section" class="hidden">
     <h2>Wins</h2>
     <ul class="wins-list" id="wins-list"></ul>
   </div>
-
-  <h2>Tasks</h2>
-  <div id="task-container"></div>
 
   <script>
     const MOMENTUM_ARROWS = { rising: '\u2191', steady: '\u2192', stalling: '\u2193', dormant: '\u00b7' };
@@ -476,44 +476,29 @@
       });
     }
 
-    function renderTasks(tasks) {
+    function renderTasks(taskData) {
+      const allTasks = [...(taskData.tasks || []), ...(taskData.system_tasks || [])];
+      const pending = allTasks.filter(t => t.status === 'pending');
+      const done = allTasks.filter(t => t.status === 'done');
       const container = document.getElementById('task-container');
-      const pending = tasks.filter(t => t.status !== 'done');
+      const header = document.getElementById('tasks-header');
+
+      header.innerHTML = `Agent Backlog <span style="font-weight:400;font-size:0.78rem;letter-spacing:0;text-transform:none;color:#bcc3cd">${pending.length} pending · ${done.length} done</span>`;
+
       if (pending.length === 0) {
-        container.innerHTML = '<div style="color:#bcc3cd;padding:0.5rem 0.75rem;font-style:italic">All clear.</div>';
+        container.innerHTML = '<div style="color:#34d399;padding:0.5rem 0.75rem;font-style:italic">All clear.</div>';
         return;
       }
 
-      const groups = {};
+      const ul = document.createElement('ul');
+      ul.className = 'task-list';
       pending.forEach(t => {
-        const key = t.related || 'General';
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(t);
+        const li = document.createElement('li');
+        li.className = 'task-item';
+        li.innerHTML = `<span class="task-status task-status-pending"></span><span>${t.task}</span>`;
+        ul.appendChild(li);
       });
-
-      const sortedKeys = Object.keys(groups).sort((a, b) => {
-        if (a === 'General') return 1;
-        if (b === 'General') return -1;
-        return a.localeCompare(b);
-      });
-
-      sortedKeys.forEach(key => {
-        const label = document.createElement('div');
-        label.className = 'task-group-label';
-        label.textContent = key;
-        container.appendChild(label);
-
-        const ul = document.createElement('ul');
-        ul.className = 'task-list';
-        groups[key].forEach(t => {
-          const li = document.createElement('li');
-          li.className = 'task-item';
-          const statusClass = t.status === 'done' ? 'task-status-done' : 'task-status-pending';
-          li.innerHTML = `<span class="task-status ${statusClass}"></span><span>${t.task}</span>`;
-          ul.appendChild(li);
-        });
-        container.appendChild(ul);
-      });
+      container.appendChild(ul);
     }
 
     Promise.all([
@@ -530,7 +515,7 @@
         tbody.appendChild(detailRow);
       });
       renderWins(data.wins || []);
-      renderTasks(taskData.tasks);
+      renderTasks(taskData);
     }).catch(err => {
       console.error('Failed to load data:', err);
     });
