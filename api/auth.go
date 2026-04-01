@@ -24,11 +24,11 @@ func generateSessionID() string {
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
-	inviteCode := os.Getenv("INVITE_CODE")
-	if inviteCode == "" {
-		http.Error(w, "registration disabled", 403)
-		return
-	}
+	// Registration is open but gated: only allowed if no users exist yet,
+	// OR if INVITE_CODE env var is set and provided in the request.
+	// This means the first user can always register, subsequent users need an invite.
+	var userCount int
+	db.QueryRow("SELECT COUNT(*) FROM users").Scan(&userCount)
 
 	var req struct {
 		Email      string `json:"email"`
@@ -40,9 +40,12 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.InviteCode != inviteCode {
-		http.Error(w, "invalid invite code", 403)
-		return
+	if userCount > 0 {
+		inviteCode := os.Getenv("INVITE_CODE")
+		if inviteCode == "" || req.InviteCode != inviteCode {
+			http.Error(w, "registration requires an invite code", 403)
+			return
+		}
 	}
 
 	if req.Email == "" || len(req.Password) < 8 {
