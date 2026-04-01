@@ -17,8 +17,8 @@ Then open `http://localhost:8000`. GitHub Pages serves it fine — this is only 
 
 ### Items (`data.json`)
 Each item has:
-- **Types**: Core (daily non-negotiables), Habit (daily practices being built), Dream (bigger aspirations), Goal (SMART goals with target dates).
-- **Momentum**: `rising`, `steady`, `stalling`, `dormant` — updated based on log activity, not guesswork.
+- **Type**: `Core` (daily non-negotiables), `Habit` (daily practices being built), `Dream` (bigger aspirations), `Goal` (SMART goals with target dates). Type captures expected **cadence** — a daily habit and a slow-burn goal like homeownership both have momentum, but "stalling" means different things for each. Evaluate momentum relative to the item's natural rhythm.
+- **Momentum**: `rising`, `steady`, `stalling`, `dormant` — updated based on log activity relative to expected cadence, not guesswork.
 - **Focus**: one honest sentence about where this actually stands right now.
 - **Next**: one specific, concrete action.
 - **Milestones**: array of `{ date, label }` — wins and achievements. Proof that things are real.
@@ -31,7 +31,12 @@ Goal-type items also have:
 - **target_date**: when it should be done (e.g. `"2027-03-31"`)
 - **success_criteria**: one sentence defining what "done" looks like
 
-Goals are worked through weekly PDCA cycles. Milestones are the checkpoints that prove momentum. The weekly check-in is where SMART targets and PDCA loops meet.
+### Engagement metric ("Stick with the process")
+This item is **derived, not self-reported**. Its momentum comes from:
+- Check-in streak (how many consecutive days the daily check-in ran)
+- % of items updated in the last 7 days
+- Goals on pace vs their target dates
+The daily check-in agent should compute and report this.
 
 ### Wins (`data.json`)
 `wins` array — cross-cutting good moments that prove the flywheel is working:
@@ -59,37 +64,42 @@ Wins can relate to specific items or cut across many. Log them during check-ins 
 - Keep these public-safe — no clinical language, no private details.
 
 ### Tasks (`tasks.json`)
-Persisted action items that carry across sessions:
+Agent backlog — things for the system to work on, not user to-dos:
 ```json
 {
   "id": 1,
   "task": "Description of what needs to happen",
   "status": "pending",
-  "related": "Item name or null",
-  "created": "2026-03-31"
+  "created": "2026-04-01"
 }
 ```
 - Status: `pending` or `done`
-- Related: links to a tracker item by name, or null
-- When completing a task, set status to `done` — don't delete it
-- When a task generates a result, also log it on the related item
+- When a task is done, remove it. Keep the list lean.
+- These are system improvement tasks, not item-level actions (those live in each item's `next` field).
 
 ## How check-ins work
-The user may share updates in different ways:
-- **Direct**: "meditation 6/7 this week" → update focus, momentum, append log, push.
-- **Conversational**: something comes up naturally in another topic → ask if they want it logged before adding.
-- **Review**: "how's everything looking" → summarize the state of all items. Mention what's active, what's stalling, what hasn't been touched. Be a friend, not a manager.
-- **Weekly check-in**: prompted by scheduled agent or user. Cover: what worked, what didn't, body/mind/social scores, feeling word, more_of/less_of. Review goal progress against targets. Update everything and push.
+**Daily check-in at noon PT** (scheduled via remote agent). Covers yesterday evening, this morning, and heading into tonight. On Sundays, adds weekly reflection questions (body/mind/social scores, feeling, more_of/less_of).
+
+Each daily check-in also includes a **system flywheel** component:
+- **Engagement report**: check-in streak, % items updated in last 7 days, goals on pace vs behind. Updates the derived "Stick with the process" momentum.
+- **Task progress**: status update on each pending agent task.
+- **One innovation**: a concrete proposal for improving the system — data model, interface, workflow, architecture. Builds on the task backlog.
+
+The agent presents all of this alongside the check-in questions, then waits for the user to respond before making any changes.
+
+The user may also share updates conversationally:
+- **Direct**: "meditation 6/7 this week" → update focus, momentum, append log.
+- **Conversational**: something comes up naturally → ask if they want it logged before adding.
+- **Review**: "how's everything looking" → summarize the state. Be a friend, not a manager.
 
 When updating:
 1. Read `data.json` and `tasks.json` first.
-2. Update focus and momentum based on what was shared.
+2. Update focus and momentum based on what was shared. **Evaluate momentum relative to the item's expected cadence** — a daily habit stalling after 3 missed days is different from a 1-year goal with no update in a week.
 3. Append a dated log entry.
 4. Add milestones for any wins or achievements.
 5. Update `last_updated` to today's date.
-6. If it's a weekly check-in, append to `check_ins` array too.
-7. Mark any completed tasks in `tasks.json`.
-8. Commit and push.
+6. If it's a weekly check-in (Sunday), append to `check_ins` array too.
+7. **Show the user all changes and wait for their OK before committing and pushing.**
 
 ## Recommendations
 When providing recommendations for items (especially Nature, Coloft):

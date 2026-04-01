@@ -2,17 +2,7 @@
   "title": "Playground",
   "description": "A personal flywheel for habits, dreams, and projects. Build, act, learn, repeat.",
   "wins": [],
-  "check_ins": [
-    {
-      "date": "2026-03-31",
-      "body": null,
-      "mind": null,
-      "social": null,
-      "feeling": null,
-      "more_of": null,
-      "less_of": null
-    }
-  ],
+  "check_ins": [],
   "items": [
     {
       "name": "Screen time",
@@ -188,17 +178,17 @@
       "name": "Stick with the process",
       "type": "Goal",
       "momentum": "rising",
-      "focus": "Tracked as a system health metric now, not a standalone goal.",
+      "focus": "Derived metric — not tracked directly. Engagement = check-in streak + items updated recently + goals on track.",
       "next": null,
-      "target_date": null,
-      "success_criteria": null,
+      "target_date": "2026-06-30",
+      "success_criteria": "System consistently used for 3 months. Derived from other items, not self-reported.",
       "last_updated": "2026-04-01",
       "milestones": [
         { "date": "2026-03-31", "label": "System built and deployed" }
       ],
       "log": [
         { "date": "2026-03-31", "note": "Goal set. Target: 12 weeks. Week 0 — system launched today." },
-        { "date": "2026-04-01", "note": "Moved to system health metric. Check-in streak tracked at system level, not as a life goal." }
+        { "date": "2026-04-01", "note": "Now a derived engagement metric. Health = check-in streak, % items with recent updates, goals on pace vs target." }
       ]
     }
   ]
