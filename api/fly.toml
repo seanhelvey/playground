@@ -1,0 +1,26 @@
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+
+app = "playground-flywheel"
+primary_region = "sjc"
+
+[build]
+
+[env]
+  PORT = "8080"
+  DB_PATH = "/data/playground.db"
+  SEED_PATH = "./data.json"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[mounts]
+  source = "playground_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

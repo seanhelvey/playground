@@ -2,25 +2,31 @@
   "tasks": [
     {
       "id": 1,
-      "task": "Add trend data to items — streak counts or recent log frequency, visible on the page",
+      "task": "Install Go and Fly CLI, test API locally (go run . in api/)",
       "status": "pending",
       "created": "2026-04-01"
     },
     {
       "id": 2,
-      "task": "Surface dormant items in daily check-in — agent mentions one as an opportunity, not a nag",
+      "task": "Convert index.html to PWA — manifest.json, service worker, installable on phone home screen",
       "status": "pending",
       "created": "2026-04-01"
     },
     {
       "id": 3,
-      "task": "Build engagement metric — derive 'stick with the process' from check-in streak, % items updated, goals on pace",
+      "task": "Add Web Push notifications — VAPID keys, subscribe endpoint, daily noon push from server",
       "status": "pending",
       "created": "2026-04-01"
     },
     {
       "id": 4,
-      "task": "Deploy to Fly.io — Go API, SQLite, PWA with Web Push notifications. Phone-first. Replace GitHub Pages + scheduled agent.",
+      "task": "Deploy to Fly.io — fly launch, create volume, verify phone push works",
+      "status": "pending",
+      "created": "2026-04-01"
+    },
+    {
+      "id": 5,
+      "task": "Wire frontend to API — index.html fetches from Go server instead of static JSON",
       "status": "pending",
       "created": "2026-04-01"
     }
