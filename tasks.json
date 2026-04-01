@@ -3,28 +3,28 @@
     {
       "id": 1,
       "task": "Set up daily noon check-in schedule (morning habits + focus)",
-      "status": "pending",
+      "status": "done",
       "related": "Stick with the process",
       "created": "2026-03-31"
     },
     {
       "id": 2,
       "task": "Set up daily 6pm wind-down schedule (stop work, DM, gratitude)",
-      "status": "pending",
+      "status": "done",
       "related": "Stick with the process",
       "created": "2026-03-31"
     },
     {
       "id": 3,
       "task": "Redesign weekly Saturday check-in with focus-picking and flexible agenda",
-      "status": "pending",
+      "status": "done",
       "related": "Stick with the process",
       "created": "2026-03-31"
     },
     {
       "id": 4,
       "task": "Add monthly first-Saturday reflection schedule",
-      "status": "pending",
+      "status": "done",
       "related": "Stick with the process",
       "created": "2026-03-31"
     },
@@ -73,7 +73,7 @@
     {
       "id": 11,
       "task": "Add gratitude practice to daily evening check-in",
-      "status": "pending",
+      "status": "done",
       "related": null,
       "created": "2026-03-31"
     },
@@ -87,35 +87,35 @@
     {
       "id": 13,
       "task": "Research latin dance classes in Humboldt area",
-      "status": "pending",
+      "status": "done",
       "related": "Dancing",
       "created": "2026-03-31"
     },
     {
       "id": 14,
       "task": "Research voice classes or choirs in Humboldt area",
-      "status": "pending",
+      "status": "done",
       "related": "Music",
       "created": "2026-03-31"
     },
     {
       "id": 15,
       "task": "Research first-time homebuyer programs in Humboldt County",
-      "status": "pending",
+      "status": "done",
       "related": "Own a home",
       "created": "2026-03-31"
     },
     {
       "id": 16,
       "task": "Evaluate Rust vs Go vs other frameworks for full-stack project",
-      "status": "pending",
+      "status": "done",
       "related": "Deploy a full-stack project",
       "created": "2026-03-31"
     },
     {
       "id": 17,
       "task": "Find candidate open source projects to contribute to",
-      "status": "pending",
+      "status": "done",
       "related": "Contribute to non-Django OSS",
       "created": "2026-03-31"
     },
