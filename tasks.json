@@ -2,65 +2,154 @@
   "tasks": [
     {
       "id": 1,
-      "task": "Set up /schedule weekly check-in agent",
+      "task": "Set up daily noon check-in schedule (morning habits + focus)",
       "status": "pending",
       "related": "Stick with the process",
       "created": "2026-03-31"
     },
     {
       "id": 2,
-      "task": "Build sparkline visualizations for check-in scores over time",
+      "task": "Set up daily 6pm wind-down schedule (stop work, DM, gratitude)",
+      "status": "pending",
+      "related": "Stick with the process",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 3,
+      "task": "Redesign weekly Saturday check-in with focus-picking and flexible agenda",
+      "status": "pending",
+      "related": "Stick with the process",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 4,
+      "task": "Add monthly first-Saturday reflection schedule",
+      "status": "pending",
+      "related": "Stick with the process",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 5,
+      "task": "Streamline system design — cut complexity, keep it playful",
       "status": "pending",
       "related": null,
       "created": "2026-03-31"
     },
     {
-      "id": 3,
-      "task": "Research and refresh targeted recommendations for Nature (fishing, gardening — Humboldt specific, seasonal)",
+      "id": 6,
+      "task": "Make all design decisions visible — README or interface",
       "status": "pending",
-      "related": "Nature",
+      "related": null,
       "created": "2026-03-31"
     },
     {
-      "id": 4,
+      "id": 7,
+      "task": "Define system-level success metrics (how is the flywheel itself doing)",
+      "status": "pending",
+      "related": null,
+      "created": "2026-03-31"
+    },
+    {
+      "id": 8,
+      "task": "Replace type column with trend visualization",
+      "status": "pending",
+      "related": null,
+      "created": "2026-03-31"
+    },
+    {
+      "id": 9,
+      "task": "Update data model — practice vs destination, in_focus, trend, daily_log",
+      "status": "pending",
+      "related": null,
+      "created": "2026-03-31"
+    },
+    {
+      "id": 10,
+      "task": "Design dormant item surfacing — actionable not naggy",
+      "status": "pending",
+      "related": null,
+      "created": "2026-03-31"
+    },
+    {
+      "id": 11,
+      "task": "Add gratitude practice to daily evening check-in",
+      "status": "pending",
+      "related": null,
+      "created": "2026-03-31"
+    },
+    {
+      "id": 12,
+      "task": "Add agent self-improvement task mechanism",
+      "status": "pending",
+      "related": null,
+      "created": "2026-03-31"
+    },
+    {
+      "id": 13,
       "task": "Research latin dance classes in Humboldt area",
       "status": "pending",
       "related": "Dancing",
       "created": "2026-03-31"
     },
     {
-      "id": 5,
+      "id": 14,
       "task": "Research voice classes or choirs in Humboldt area",
       "status": "pending",
       "related": "Music",
       "created": "2026-03-31"
     },
     {
-      "id": 6,
+      "id": 15,
       "task": "Research first-time homebuyer programs in Humboldt County",
       "status": "pending",
       "related": "Own a home",
       "created": "2026-03-31"
     },
     {
-      "id": 7,
+      "id": 16,
       "task": "Evaluate Rust vs Go vs other frameworks for full-stack project",
       "status": "pending",
       "related": "Deploy a full-stack project",
       "created": "2026-03-31"
     },
     {
-      "id": 8,
-      "task": "Find candidate open source projects (Rust, Go, or agentic tooling) to contribute to",
+      "id": 17,
+      "task": "Find candidate open source projects to contribute to",
       "status": "pending",
       "related": "Contribute to non-Django OSS",
       "created": "2026-03-31"
     },
     {
-      "id": 9,
+      "id": 18,
       "task": "Complete first weekly check-in by April 6",
       "status": "pending",
       "related": "Stick with the process",
+      "created": "2026-03-31"
+    }
+  ],
+  "system_tasks": [
+    {
+      "id": 101,
+      "task": "Evaluate trend visualization approach: sparklines vs heatmap squares vs simple streak count",
+      "status": "pending",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 102,
+      "task": "Research how to make dormant item nudges feel like opportunities not obligations",
+      "status": "pending",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 103,
+      "task": "Design system health dashboard — response rate, check-in streak, items moving vs stalling, recommendation hit rate",
+      "status": "pending",
+      "created": "2026-03-31"
+    },
+    {
+      "id": 104,
+      "task": "Consider whether individual components (habit tracker, goal coach, gratitude journal) could become standalone tools",
+      "status": "pending",
       "created": "2026-03-31"
     }
   ]
