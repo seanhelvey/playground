@@ -142,26 +142,32 @@ Scheduled Claude agent (cron) → reads/writes JSON via git
 **Broken:** Can't reach the user's phone. No notifications. No real-time interaction.
 
 ### Phase 1: Phone-first app (target: deploy the full-stack project)
-The core need is a **PWA that pings you and lets you interact**. Minimal moving parts.
+The core need is a **standalone PWA that pings you and lets you check in**. No Claude integration in the running app. No tokens. No third-party AI dependency.
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────┐
-│  PWA         │────▶│  API + Push  │────▶│  DB      │
-│  (installable│◀────│  (Go or Rust)│◀────│  (SQLite │
-│  mobile web) │     │              │     │  or PG)  │
+│  PWA         │────▶│  Go API      │────▶│  SQLite  │
+│  (installable│◀────│  + Web Push  │◀────│  (Fly    │
+│  mobile web) │     │  + Cron      │     │  volume) │
 └──────────────┘     └──────────────┘     └──────────┘
-                           ▲
-                     ┌─────┴──────┐
-                     │  Claude    │
-                     │  Agent     │
-                     │  (scheduled│
-                     │  or on-    │
-                     │  demand)   │
-                     └────────────┘
+
+Claude Code = dev tool (build, iterate, manage)
+The app itself = standalone, no AI dependency
 ```
 **What it does:**
-- PWA on phone home screen. Push notification at noon. Tap → check-in conversation.
-- API serves data, receives updates. Agent calls API instead of git.
+- PWA on phone home screen. Push notification at noon. Tap → check-in form in the app.
+- Go API serves data, receives check-in responses, computes engagement metrics.
+- Built-in cron sends Web Push at noon PT. No external scheduler needed.
 - SQLite for one user. Postgres when/if multi-user matters.
+
+**What Claude Code does (dev time only):**
+- Build and iterate on features with the user
+- System flywheel: review engagement, propose improvements, manage tasks
+- No Claude tokens or API keys in the deployed app
+
+**Security before deploy:**
+- API key auth (env var on Fly, reject requests without it)
+- Spending limit $0 in Fly dashboard
+- Rate limiting on endpoints
 
 **Hosting research (completed):**
 
@@ -176,9 +182,12 @@ The core need is a **PWA that pings you and lets you interact**. Minimal moving 
 
 **Recommendation: Fly.io.** Native Go/Rust, SQLite on a volume for one user, built-in Postgres for growth, $0 to start. Web Push is just HTTP calls from the backend.
 
-**Open decisions:**
-- Language: Go (ship fast) vs Rust (learn more, OSS ecosystem)
-- Push: Web Push (free, needs PWA install) vs SMS fallback (Twilio, ~$1/mo)
+**Decided:**
+- Language: **Go** (ship fast, learn new language, Rust for OSS separately)
+- Push: **Web Push** (free, no external service needed)
+- Hosting: **Fly.io free tier** ($0/mo, credit card required, set spending limit to $0)
+- Auth: **API key** (env var on Fly, no user accounts yet)
+- Claude: **Dev tool only** (no tokens in deployed app, no runtime AI dependency)
 
 ### Phase 2: Multi-user + Open Source (future)
 - Others run their own flywheel

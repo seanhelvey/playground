@@ -2,31 +2,43 @@
   "tasks": [
     {
       "id": 1,
-      "task": "Install Go and Fly CLI, test API locally (go run . in api/)",
+      "task": "Add API key auth middleware — reject requests without valid key, key stored as Fly env var",
       "status": "pending",
       "created": "2026-04-01"
     },
     {
       "id": 2,
-      "task": "Convert index.html to PWA — manifest.json, service worker, installable on phone home screen",
+      "task": "Add built-in cron to Go server — sends Web Push at noon PT daily, no external scheduler",
       "status": "pending",
       "created": "2026-04-01"
     },
     {
       "id": 3,
-      "task": "Add Web Push notifications — VAPID keys, subscribe endpoint, daily noon push from server",
+      "task": "Convert index.html to PWA — manifest.json, service worker, installable on phone home screen",
       "status": "pending",
       "created": "2026-04-01"
     },
     {
       "id": 4,
-      "task": "Deploy to Fly.io — fly launch, create volume, verify phone push works",
+      "task": "Add Web Push — VAPID keys, subscribe endpoint in API, push from built-in cron",
       "status": "pending",
       "created": "2026-04-01"
     },
     {
       "id": 5,
-      "task": "Wire frontend to API — index.html fetches from Go server instead of static JSON",
+      "task": "Build check-in form in PWA — guided flow for daily check-in (habits, gratitude, focus, wins)",
+      "status": "pending",
+      "created": "2026-04-01"
+    },
+    {
+      "id": 6,
+      "task": "Wire frontend to API — dashboard fetches from Go server instead of static JSON",
+      "status": "pending",
+      "created": "2026-04-01"
+    },
+    {
+      "id": 7,
+      "task": "Install Go + Fly CLI, test locally, deploy to Fly.io — set spending limit to $0, verify push on phone",
       "status": "pending",
       "created": "2026-04-01"
     }
