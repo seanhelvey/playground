@@ -128,3 +128,65 @@ If the user mentions a new habit, interest, or dream that seems like it belongs 
 
 ## Public-facing — treat like a portfolio
 This repo is public. Think of it like a resume or personal brand artifact — sharing interests and growth is fine, but nothing sensitive, private, or unprofessional. No full names, no specific addresses, no personal struggles, no financial details, no private relationships. Keep the tone something you'd be comfortable with a potential collaborator or employer reading. When in doubt, leave it out.
+
+## Architecture — Cloud Migration Path
+
+This section is the single source of truth for where the system is headed. The current static-JSON + GitHub Pages setup is Phase 0. The goal is a real app that reliably reaches the user, persists data properly, and could serve others.
+
+### Phase 0: Now (static files)
+```
+GitHub Pages: index.html ← data.json + tasks.json
+Scheduled Claude agent (cron) → reads/writes JSON via git
+```
+**Works:** Data model, UI, check-in structure, flywheel loop.
+**Broken:** Can't reach the user's phone. No notifications. No real-time interaction.
+
+### Phase 1: Phone-first app (target: deploy the full-stack project)
+The core need is a **PWA that pings you and lets you interact**. Minimal moving parts.
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────┐
+│  PWA         │────▶│  API + Push  │────▶│  DB      │
+│  (installable│◀────│  (Go or Rust)│◀────│  (SQLite │
+│  mobile web) │     │              │     │  or PG)  │
+└──────────────┘     └──────────────┘     └──────────┘
+                           ▲
+                     ┌─────┴──────┐
+                     │  Claude    │
+                     │  Agent     │
+                     │  (scheduled│
+                     │  or on-    │
+                     │  demand)   │
+                     └────────────┘
+```
+**What it does:**
+- PWA on phone home screen. Push notification at noon. Tap → check-in conversation.
+- API serves data, receives updates. Agent calls API instead of git.
+- SQLite for one user. Postgres when/if multi-user matters.
+
+**Hosting research (completed):**
+
+| Platform | Free tier | 1 user cost | 100 users | Go/Rust | DB | Notes |
+|----------|-----------|-------------|-----------|---------|-----|-------|
+| **Fly.io** | 3 shared VMs, 1GB vol | $0 | $5-10/mo | Both native | SQLite (volume), Postgres (built-in) | Best fit. Real binary, scales simply. Machines sleep on free tier. |
+| Cloudflare Workers+D1+Pages | 100K req/day, 5GB D1 | $0 | $0-5/mo | Rust→WASM only, no Go | D1 (SQLite-compat) | Cheapest at scale but no Go, WASM-only Rust, D1 still maturing. |
+| Railway | $5 trial credit (one-time) | ~$5/mo | $10-20/mo | Both via Docker | Postgres add-on | No real free tier. |
+| Render | 1 free service (sleeps), 90-day free Postgres | $0-7/mo | $7-25/mo | Both native | Postgres (managed) | Free Postgres expires. 30s+ cold starts on free. |
+| Vercel | Generous frontend, 100GB-hrs functions | $0 frontend | $20/mo Pro | Go yes, Rust limited | None (external) | Wrong paradigm for Go/Rust API server. |
+| Firebase | 125K invocations/mo, 1GB Firestore | $0 | $5-25/mo | Go (2nd gen only), no Rust | Firestore (NoSQL) | Best push (FCM), but vendor lock-in, NoSQL only. |
+
+**Recommendation: Fly.io.** Native Go/Rust, SQLite on a volume for one user, built-in Postgres for growth, $0 to start. Web Push is just HTTP calls from the backend.
+
+**Open decisions:**
+- Language: Go (ship fast) vs Rust (learn more, OSS ecosystem)
+- Push: Web Push (free, needs PWA install) vs SMS fallback (Twilio, ~$1/mo)
+
+### Phase 2: Multi-user + Open Source (future)
+- Others run their own flywheel
+- Coloft community connection?
+- OSS contributions come from others building on the framework
+
+### Design principles
+- **Don't make me think** — Interface explains itself.
+- **Single source of truth** — CLAUDE.md for system design. Database for user data.
+- **Flywheel > features** — Every addition must make the daily loop better.
+- **Phone-first** — If it doesn't work on the phone, it doesn't work.

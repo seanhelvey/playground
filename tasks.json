@@ -20,7 +20,7 @@
     },
     {
       "id": 4,
-      "task": "Document system architecture in CLAUDE.md — feature diagram, data model, cloud migration path. Single source of truth.",
+      "task": "Deploy to Fly.io — Go API, SQLite, PWA with Web Push notifications. Phone-first. Replace GitHub Pages + scheduled agent.",
       "status": "pending",
       "created": "2026-04-01"
     }
