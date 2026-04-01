@@ -55,15 +55,6 @@ func migrate(db *sql.DB) error {
 			created TEXT NOT NULL
 		);
 
-		CREATE TABLE IF NOT EXISTS push_subscriptions (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL REFERENCES users(id),
-			endpoint TEXT NOT NULL UNIQUE,
-			p256dh TEXT NOT NULL,
-			auth TEXT NOT NULL,
-			created TEXT NOT NULL
-		);
-
 		CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			email TEXT NOT NULL UNIQUE,
@@ -76,6 +67,15 @@ func migrate(db *sql.DB) error {
 			user_id INTEGER NOT NULL REFERENCES users(id),
 			created TEXT NOT NULL,
 			expires TEXT NOT NULL
+		);
+
+		CREATE TABLE IF NOT EXISTS push_subscriptions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL REFERENCES users(id),
+			endpoint TEXT NOT NULL UNIQUE,
+			p256dh TEXT NOT NULL,
+			auth TEXT NOT NULL,
+			created TEXT NOT NULL
 		);
 	`)
 	return err
