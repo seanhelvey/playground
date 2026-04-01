@@ -20,13 +20,7 @@
     },
     {
       "id": 4,
-      "task": "Create system architecture doc — feature diagram, data model, infrastructure needs for full-stack cloud migration",
-      "status": "pending",
-      "created": "2026-04-01"
-    },
-    {
-      "id": 5,
-      "task": "Update CLAUDE.md — daily check-in flow, show-before-commit, cadence-aware momentum",
+      "task": "Document system architecture in CLAUDE.md — feature diagram, data model, cloud migration path. Single source of truth.",
       "status": "pending",
       "created": "2026-04-01"
     }
