@@ -366,6 +366,36 @@
   </div>
 
   <script>
+    function showLogin() {
+      const div = document.createElement('div');
+      div.style.cssText = 'max-width:360px;margin:80px auto;padding:24px;';
+      div.innerHTML = `
+        <h1 style="background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1.5rem">Playground</h1>
+        <div id="auth-msg" style="color:#f87171;margin-bottom:1rem;display:none"></div>
+        <input id="auth-email" type="email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:6px;color:#e2e4e9;font-size:1rem">
+        <input id="auth-pass" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:16px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:6px;color:#e2e4e9;font-size:1rem">
+        <button id="auth-login" style="width:100%;padding:10px;background:#60a5fa;border:none;border-radius:6px;color:#0f1117;font-weight:600;font-size:1rem;cursor:pointer;margin-bottom:8px">Log in</button>
+        <button id="auth-register" style="width:100%;padding:10px;background:transparent;border:1px solid #2a2d3a;border-radius:6px;color:#bcc3cd;font-size:0.9rem;cursor:pointer">Register</button>
+      `;
+      document.body.appendChild(div);
+
+      async function doAuth(endpoint) {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-pass').value;
+        const msg = document.getElementById('auth-msg');
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, password: pass})
+        });
+        if (res.ok) { location.reload(); }
+        else { msg.style.display = 'block'; msg.textContent = await res.text(); }
+      }
+
+      document.getElementById('auth-login').onclick = () => doAuth('/api/login');
+      document.getElementById('auth-register').onclick = () => doAuth('/api/register');
+    }
+
     const MOMENTUM_ARROWS = { rising: '\u2191', steady: '\u2192', stalling: '\u2193', dormant: '\u00b7' };
     const MOMENTUM_ORDER = { rising: 0, steady: 1, stalling: 2, dormant: 3 };
 
@@ -502,22 +532,32 @@
     }
 
     Promise.all([
-      fetch('data.json').then(r => r.json()),
-      fetch('tasks.json').then(r => r.json())
-    ]).then(([data, taskData]) => {
-      data.items.sort((a, b) => (MOMENTUM_ORDER[a.momentum] || 3) - (MOMENTUM_ORDER[b.momentum] || 3));
-      renderPulse(data.items);
-      renderCheckin(data);
+      fetch('/api/items').then(r => {
+        if (r.status === 401) throw new Error('unauthorized');
+        return r.json();
+      }),
+      fetch('/api/tasks').then(r => r.ok ? r.json() : []),
+      fetch('/api/checkins').then(r => r.ok ? r.json() : []),
+      fetch('/api/wins').then(r => r.ok ? r.json() : [])
+    ]).then(([items, tasks, checkins, wins]) => {
+      items.sort((a, b) => (MOMENTUM_ORDER[a.momentum] || 3) - (MOMENTUM_ORDER[b.momentum] || 3));
+      renderPulse(items);
+      renderCheckin({ check_ins: checkins });
       const tbody = document.getElementById('tracker-body');
-      data.items.forEach(item => {
+      items.forEach(item => {
         const [row, detailRow] = renderRow(item);
         tbody.appendChild(row);
         tbody.appendChild(detailRow);
       });
-      renderWins(data.wins || []);
-      renderTasks(taskData);
+      renderWins(wins);
+      renderTasks({ tasks: tasks });
     }).catch(err => {
-      console.error('Failed to load data:', err);
+      if (err.message === 'unauthorized') {
+        document.body.innerHTML = '';
+        showLogin();
+      } else {
+        console.error('Failed to load data:', err);
+      }
     });
   </script>
 
