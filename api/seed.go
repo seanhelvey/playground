@@ -8,9 +8,16 @@ import (
 )
 
 type SeedData struct {
-	Items    []SeedItem   `json:"items"`
-	Wins     []SeedWin    `json:"wins"`
+	Items    []SeedItem    `json:"items"`
+	Wins     []SeedWin     `json:"wins"`
 	CheckIns []SeedCheckin `json:"check_ins"`
+	Tasks    []SeedTask    `json:"tasks"`
+}
+
+type SeedTask struct {
+	Task    string `json:"task"`
+	Status  string `json:"status"`
+	Created string `json:"created"`
 }
 
 type SeedItem struct {
@@ -64,11 +71,32 @@ func seedFromJSON(db *sql.DB, path string) error {
 		return fmt.Errorf("parsing %s: %w", path, err)
 	}
 
-	// Check if already seeded
-	var count int
-	db.QueryRow("SELECT COUNT(*) FROM items").Scan(&count)
-	if count > 0 {
-		return nil // already seeded
+	// Also try to load tasks from tasks.json alongside data.json
+	tasksPath := path[:len(path)-len("data.json")] + "tasks.json"
+	if tasksData, err := os.ReadFile(tasksPath); err == nil {
+		var taskFile struct {
+			Tasks []SeedTask `json:"tasks"`
+		}
+		if json.Unmarshal(tasksData, &taskFile) == nil {
+			seed.Tasks = taskFile.Tasks
+		}
+	}
+
+	// Check if items already seeded
+	var itemCount int
+	db.QueryRow("SELECT COUNT(*) FROM items").Scan(&itemCount)
+
+	// Always try to seed tasks if empty (even if items exist)
+	var taskCount int
+	db.QueryRow("SELECT COUNT(*) FROM tasks").Scan(&taskCount)
+	if taskCount == 0 && len(seed.Tasks) > 0 {
+		for _, t := range seed.Tasks {
+			db.Exec("INSERT INTO tasks (task, status, created) VALUES (?, ?, ?)", t.Task, t.Status, t.Created)
+		}
+	}
+
+	if itemCount > 0 {
+		return nil // items already seeded
 	}
 
 	tx, _ := db.Begin()
@@ -93,6 +121,10 @@ func seedFromJSON(db *sql.DB, path string) error {
 	for _, c := range seed.CheckIns {
 		tx.Exec("INSERT INTO check_ins (date, body, mind, social, feeling, more_of, less_of) VALUES (?, ?, ?, ?, ?, ?, ?)",
 			c.Date, c.Body, c.Mind, c.Social, c.Feeling, c.MoreOf, c.LessOf)
+	}
+
+	for _, t := range seed.Tasks {
+		tx.Exec("INSERT INTO tasks (task, status, created) VALUES (?, ?, ?)", t.Task, t.Status, t.Created)
 	}
 
 	return tx.Commit()

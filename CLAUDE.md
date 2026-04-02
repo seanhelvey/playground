@@ -1,17 +1,22 @@
 # Playground
 
-A personal flywheel for habits, dreams, goals, and projects. Source of truth: `data.json` and `tasks.json`. Rendered at `index.html`. Hosted on GitHub Pages.
+A personal flywheel for habits, dreams, goals, and projects. Go API + SQLite + PWA. Deployed on Fly.io.
 
 ## Git
 - Push directly to `main`, no branches.
-- Commit and push after updating data.
 
-## Local preview
-The page fetches JSON via JS, which won't work from `file://`. To preview locally:
+## Local dev
+```bash
+cd api
+go mod tidy
+go run .
 ```
-python3 -m http.server 8000
+Open `http://localhost:8080`. The server seeds SQLite from `data.json` + `tasks.json` on first run and serves the PWA from `static/`.
+
+## Deploy
+```bash
+fly deploy
 ```
-Then open `http://localhost:8000`. GitHub Pages serves it fine — this is only needed for local dev.
 
 ## Data model
 
