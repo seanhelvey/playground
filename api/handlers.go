@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -41,7 +42,8 @@ type Milestone struct {
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated FROM items ORDER BY CASE momentum WHEN 'rising' THEN 0 WHEN 'steady' THEN 1 WHEN 'stalling' THEN 2 WHEN 'dormant' THEN 3 END")
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		log.Printf("error getting items: %v", err)
+		http.Error(w, "internal error", 500)
 		return
 	}
 	defer rows.Close()

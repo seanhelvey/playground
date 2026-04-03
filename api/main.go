@@ -95,10 +95,12 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 		if allowedOrigin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		} else if origin == "" {
+			// Same-origin requests don't send Origin header — no CORS needed
 		} else {
-			// Same-origin requests (PWA served from same domain) don't need CORS
-			// Only set for local dev
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+			// No ALLOWED_ORIGIN configured and cross-origin request — reject
+			http.Error(w, "forbidden", 403)
+			return
 		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
