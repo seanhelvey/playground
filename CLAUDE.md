@@ -83,28 +83,24 @@ Agent backlog — things for the system to work on, not user to-dos:
 - These are system improvement tasks, not item-level actions (those live in each item's `next` field).
 
 ## How check-ins work
-**Daily check-in at noon PT** (scheduled via remote agent). Covers yesterday evening, this morning, and heading into tonight. On Sundays, adds weekly reflection questions (body/mind/social scores, feeling, more_of/less_of).
+**Two channels, not connected yet:**
 
-Each daily check-in also includes a **system flywheel** component:
-- **Engagement report**: check-in streak, % items updated in last 7 days, goals on pace vs behind. Updates the derived "Stick with the process" momentum.
-- **Task progress**: status update on each pending agent task.
-- **One innovation**: a concrete proposal for improving the system — data model, interface, workflow, architecture. Builds on the task backlog.
+1. **App (PWA)** — user opens the app, taps +, logs activity / records wins / does weekly check-in (body/mind/social, feeling, more/less). Data goes to SQLite via API.
 
-The agent presents all of this alongside the check-in questions, then waits for the user to respond before making any changes.
+2. **Claude Code (iOS)** — user opens Claude Code separately, reviews how things are going, gives tasks for system improvement. Claude reads the repo, proposes changes, commits when approved.
 
-The user may also share updates conversationally:
-- **Direct**: "meditation 6/7 this week" → update focus, momentum, append log.
-- **Conversational**: something comes up naturally → ask if they want it logged before adding.
-- **Review**: "how's everything looking" → summarize the state. Be a friend, not a manager.
-
-When updating:
+**When using Claude Code to update items:**
 1. Read `data.json` and `tasks.json` first.
 2. Update focus and momentum based on what was shared. **Evaluate momentum relative to the item's expected cadence** — a daily habit stalling after 3 missed days is different from a 1-year goal with no update in a week.
 3. Append a dated log entry.
 4. Add milestones for any wins or achievements.
 5. Update `last_updated` to today's date.
-6. If it's a weekly check-in (Sunday), append to `check_ins` array too.
-7. **Show the user all changes and wait for their OK before committing and pushing.**
+6. **Show the user all changes and wait for their OK before committing and pushing.**
+
+The user may share updates conversationally:
+- **Direct**: "meditation 6/7 this week" → update focus, momentum, append log.
+- **Conversational**: something comes up naturally → ask if they want it logged before adding.
+- **Review**: "how's everything looking" → summarize the state. Be a friend, not a manager.
 
 ## Recommendations
 When providing recommendations for items (especially Nature, Coloft):
@@ -134,73 +130,57 @@ If the user mentions a new habit, interest, or dream that seems like it belongs 
 ## Public-facing — treat like a portfolio
 This repo is public. Think of it like a resume or personal brand artifact — sharing interests and growth is fine, but nothing sensitive, private, or unprofessional. No full names, no specific addresses, no personal struggles, no financial details, no private relationships. Keep the tone something you'd be comfortable with a potential collaborator or employer reading. When in doubt, leave it out.
 
-## Architecture — Cloud Migration Path
+## Vision: Intelligent PDCA Flywheel
 
-This section is the single source of truth for where the system is headed. The current static-JSON + GitHub Pages setup is Phase 0. The goal is a real app that reliably reaches the user, persists data properly, and could serve others.
+**This is the entire point of this project.** Not a dashboard. Not a form. A system that learns and adapts through continuous improvement — for both the user's life and the system itself.
 
-### Phase 0: Now (static files)
 ```
-GitHub Pages: index.html ← data.json + tasks.json
-Scheduled Claude agent (cron) → reads/writes JSON via git
+        ┌─────────────────────────────────────┐
+        │          THE FLYWHEEL               │
+        │                                     │
+        │   PLAN ──── DO ──── CHECK ──── ACT  │
+        │     │                          │    │
+        │     └──────── REPEAT ──────────┘    │
+        │                                     │
+        │   Today: human-driven (manual PDCA) │
+        │   Goal: system-driven (auto PDCA)   │
+        └─────────────────────────────────────┘
 ```
-**Works:** Data model, UI, check-in structure, flywheel loop.
-**Broken:** Can't reach the user's phone. No notifications. No real-time interaction.
 
-### Phase 1: Phone-first app (target: deploy the full-stack project)
-The core need is a **standalone PWA that pings you and lets you check in**. No Claude integration in the running app. No tokens. No third-party AI dependency.
+### Where we are now (v1 — manual loop)
+- **PWA on Fly.io** — check in, log activity, record wins from phone
+- **Claude Code on iOS** — separate tool, user-initiated, reads repo + reviews state, proposes improvements
+- **The loop is manual**: user checks in via app, then separately opens Claude Code to reflect and give tasks
+- The two halves (app data + Claude intelligence) are **not connected yet**
+
+### Where this is headed (v2 — intelligent loop)
+The app itself becomes smart. Not just a place to enter data, but a system that:
+- **Notices patterns** — "you always stall on meditation after weekends"
+- **Adapts questions** — asks what's relevant today, not the same 6 fields every time
+- **Computes momentum** — from actual behavior, not self-reported status
+- **Proposes experiments** — "try morning meditation instead of evening for a week"
+- **Tracks what works** — closes the loop on its own suggestions
+- **Gets smarter over time** — learns from what you actually do, not what you plan to do
+
+This could mean Claude API calls from the server, or smarter rule engines, or both. The right approach will emerge from actually using v1 and seeing what's missing. **Ship simple, use it, improve it.**
+
+### Architecture
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────┐
 │  PWA         │────▶│  Go API      │────▶│  SQLite  │
-│  (installable│◀────│  + Web Push  │◀────│  (Fly    │
-│  mobile web) │     │  + Cron      │     │  volume) │
+│  (phone)     │◀────│  (Fly.io)    │◀────│  (volume)│
 └──────────────┘     └──────────────┘     └──────────┘
 
-Claude Code = dev tool (build, iterate, manage)
-The app itself = standalone, no AI dependency
+Claude Code = dev tool only (no tokens in deployed app)
 ```
-**What it does:**
-- PWA on phone home screen. Push notification at noon. Tap → check-in form in the app.
-- Go API serves data, receives check-in responses, computes engagement metrics.
-- Built-in cron sends Web Push at noon PT. No external scheduler needed.
-- SQLite for one user. Postgres when/if multi-user matters.
-
-**What Claude Code does (dev time only):**
-- Build and iterate on features with the user
-- System flywheel: review engagement, propose improvements, manage tasks
-- No Claude tokens or API keys in the deployed app
-
-**Security before deploy:**
-- API key auth (env var on Fly, reject requests without it)
-- Spending limit $0 in Fly dashboard
-- Rate limiting on endpoints
-
-**Hosting research (completed):**
-
-| Platform | Free tier | 1 user cost | 100 users | Go/Rust | DB | Notes |
-|----------|-----------|-------------|-----------|---------|-----|-------|
-| **Fly.io** | 3 shared VMs, 1GB vol | $0 | $5-10/mo | Both native | SQLite (volume), Postgres (built-in) | Best fit. Real binary, scales simply. Machines sleep on free tier. |
-| Cloudflare Workers+D1+Pages | 100K req/day, 5GB D1 | $0 | $0-5/mo | Rust→WASM only, no Go | D1 (SQLite-compat) | Cheapest at scale but no Go, WASM-only Rust, D1 still maturing. |
-| Railway | $5 trial credit (one-time) | ~$5/mo | $10-20/mo | Both via Docker | Postgres add-on | No real free tier. |
-| Render | 1 free service (sleeps), 90-day free Postgres | $0-7/mo | $7-25/mo | Both native | Postgres (managed) | Free Postgres expires. 30s+ cold starts on free. |
-| Vercel | Generous frontend, 100GB-hrs functions | $0 frontend | $20/mo Pro | Go yes, Rust limited | None (external) | Wrong paradigm for Go/Rust API server. |
-| Firebase | 125K invocations/mo, 1GB Firestore | $0 | $5-25/mo | Go (2nd gen only), no Rust | Firestore (NoSQL) | Best push (FCM), but vendor lock-in, NoSQL only. |
-
-**Recommendation: Fly.io.** Native Go/Rust, SQLite on a volume for one user, built-in Postgres for growth, $0 to start. Web Push is just HTTP calls from the backend.
-
-**Decided:**
-- Language: **Go** (ship fast, learn new language, Rust for OSS separately)
-- Push: **Web Push** (free, no external service needed)
-- Hosting: **Fly.io free tier** ($0/mo, credit card required, set spending limit to $0)
-- Auth: **API key** (env var on Fly, no user accounts yet)
-- Claude: **Dev tool only** (no tokens in deployed app, no runtime AI dependency)
-
-### Phase 2: Multi-user + Open Source (future)
-- Others run their own flywheel
-- Coloft community connection?
-- OSS contributions come from others building on the framework
+- **Go + SQLite + Fly.io free tier** ($0/mo)
+- **Session auth** (bcrypt + cookies), rate-limited
+- **PWA** — installable on phone, works offline for static assets
+- First user registers freely, subsequent users need INVITE_CODE env var
 
 ### Design principles
 - **Don't make me think** — Interface explains itself.
 - **Single source of truth** — CLAUDE.md for system design. Database for user data.
 - **Flywheel > features** — Every addition must make the daily loop better.
 - **Phone-first** — If it doesn't work on the phone, it doesn't work.
+- **Ship simple, improve always** — A working v1 beats a perfect plan.

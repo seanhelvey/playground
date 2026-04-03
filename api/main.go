@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -44,12 +45,15 @@ func main() {
 		log.Printf("seed: %v (may be fine if already seeded)", err)
 	}
 
+	// Rate limit: 10 attempts per minute on auth endpoints
+	authLimiter := newRateLimiter(10, time.Minute)
+
 	mux := http.NewServeMux()
 
 	// Public routes (no auth)
 	mux.HandleFunc("GET /api/health", handleHealth)
-	mux.HandleFunc("POST /api/register", handleRegister)
-	mux.HandleFunc("POST /api/login", handleLogin)
+	mux.HandleFunc("POST /api/register", authLimiter.middleware(handleRegister))
+	mux.HandleFunc("POST /api/login", authLimiter.middleware(handleLogin))
 	mux.HandleFunc("POST /api/logout", handleLogout)
 
 	// Protected API routes (auth required)
@@ -70,17 +74,35 @@ func main() {
 	mux.Handle("/api/", authMiddleware(api))
 
 	// Serve static files (PWA) — no auth, the app shell loads for everyone
-	mux.Handle("/", http.FileServer(http.Dir("./static")))
+	staticDir := os.Getenv("STATIC_DIR")
+	if staticDir == "" {
+		staticDir = "../static"
+	}
+	staticDir, _ = filepath.Abs(staticDir)
+	mux.Handle("/", http.FileServer(http.Dir(staticDir)))
 
 	log.Printf("listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, corsMiddleware(mux)))
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
+	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := r.Header.Get("Origin")
+		if allowedOrigin != "" && origin != "" && origin != allowedOrigin {
+			http.Error(w, "forbidden", 403)
+			return
+		}
+		if allowedOrigin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		} else {
+			// Same-origin requests (PWA served from same domain) don't need CORS
+			// Only set for local dev
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(204)
 			return

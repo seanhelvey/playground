@@ -119,6 +119,11 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 
 	today := time.Now().Format("2006-01-02")
 	if update.Momentum != nil {
+		valid := map[string]bool{"rising": true, "steady": true, "stalling": true, "dormant": true}
+		if !valid[*update.Momentum] {
+			http.Error(w, "momentum must be rising, steady, stalling, or dormant", 400)
+			return
+		}
 		db.Exec("UPDATE items SET momentum = ?, last_updated = ? WHERE name = ?", *update.Momentum, today, name)
 	}
 	if update.Focus != nil {

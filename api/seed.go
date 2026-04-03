@@ -86,11 +86,13 @@ func seedFromJSON(db *sql.DB, path string) error {
 	var itemCount int
 	db.QueryRow("SELECT COUNT(*) FROM items").Scan(&itemCount)
 
-	// Always try to seed tasks if empty (even if items exist)
-	var taskCount int
-	db.QueryRow("SELECT COUNT(*) FROM tasks").Scan(&taskCount)
-	if taskCount == 0 && len(seed.Tasks) > 0 {
-		for _, t := range seed.Tasks {
+	// Sync tasks from tasks.json every startup.
+	// Claude Code adds tasks to tasks.json via git. On deploy, new tasks
+	// get inserted here. Matches on task text to avoid duplicates.
+	for _, t := range seed.Tasks {
+		var exists int
+		db.QueryRow("SELECT COUNT(*) FROM tasks WHERE task = ?", t.Task).Scan(&exists)
+		if exists == 0 {
 			db.Exec("INSERT INTO tasks (task, status, created) VALUES (?, ?, ?)", t.Task, t.Status, t.Created)
 		}
 	}

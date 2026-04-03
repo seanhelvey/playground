@@ -22,5 +22,6 @@ EXPOSE 8080
 ENV PORT=8080
 ENV DB_PATH=/data/playground.db
 ENV SEED_PATH=./data.json
+ENV STATIC_DIR=./static
 
 CMD ["./server"]
