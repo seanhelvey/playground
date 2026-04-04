@@ -11,12 +11,10 @@ cd api
 go mod tidy
 go run .
 ```
-Open `http://localhost:8080`. The server seeds SQLite from `data.json` + `tasks.json` on first run and serves the PWA from `static/`.
+Open `http://localhost:8080`. The server seeds SQLite from `data.json` on first run and serves the PWA from `static/`.
 
 ## Deploy
-```bash
-fly deploy
-```
+Pushing to `main` triggers an automatic deploy via `.github/workflows/deploy.yml`. Requires `FLY_API_TOKEN` set as a GitHub Actions secret.
 
 ## Data model
 
@@ -68,19 +66,8 @@ Wins can relate to specific items or cut across many. Log them during check-ins 
 - **more_of / less_of**: one word or short phrase each.
 - Keep these public-safe — no clinical language, no private details.
 
-### Tasks (`tasks.json`)
-Agent backlog — things for the system to work on, not user to-dos:
-```json
-{
-  "id": 1,
-  "task": "Description of what needs to happen",
-  "status": "pending",
-  "created": "2026-04-01"
-}
-```
-- Status: `pending` or `done`
-- When a task is done, remove it. Keep the list lean.
-- These are system improvement tasks, not item-level actions (those live in each item's `next` field).
+### Tasks
+System improvement tasks are tracked as GitHub Issues in this repo. Use labels (`priority:highest`, `priority:high`, etc.) to manage order. Close issues when done.
 
 ## How check-ins work
 **Two channels, not connected yet:**
@@ -90,7 +77,7 @@ Agent backlog — things for the system to work on, not user to-dos:
 2. **Claude Code (iOS)** — user opens Claude Code separately, reviews how things are going, gives tasks for system improvement. Claude reads the repo, proposes changes, commits when approved.
 
 **When using Claude Code to update items:**
-1. Read `data.json` and `tasks.json` first.
+1. Read `data.json` first.
 2. Update focus and momentum based on what was shared. **Evaluate momentum relative to the item's expected cadence** — a daily habit stalling after 3 missed days is different from a 1-year goal with no update in a week.
 3. Append a dated log entry.
 4. Add milestones for any wins or achievements.
