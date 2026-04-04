@@ -127,6 +127,8 @@
     .ci-submit:disabled { opacity: 0.5; cursor: not-allowed; }
     .ci-msg { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #34d399; }
     .ci-msg.error { color: #f87171; }
+    .ci-indicator { font-size: 0.85rem; color: #34d399; min-width: 1.5ch; margin-left: auto; }
+    .ci-toggle.saved { opacity: 0.6; cursor: default; }
 
     /* ── Tracker table ── */
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
@@ -265,6 +267,20 @@
     }
 
     /* ── Check-in section ── */
+    const today = new Date().toISOString().slice(0, 10);
+
+    async function autoSaveLog(name, note, ind) {
+      if (ind) ind.textContent = '·';
+      const res = await fetch(`/api/items/${encodeURIComponent(name)}/log`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ note })
+      });
+      if (ind) {
+        ind.textContent = res.ok ? '✓' : '✗';
+        setTimeout(() => { ind.textContent = ''; }, 1500);
+      }
+    }
+
     function renderCheckinSection(items) {
       const section = document.getElementById('checkin-section');
       let html = '';
@@ -272,14 +288,16 @@
       // Core + Habit items: toggle + optional note
       const daily = items.filter(i => i.type === 'Core' || i.type === 'Habit');
       daily.forEach((it, i) => {
+        const doneToday = (it.log || []).some(e => e.date === today);
         html += `<div class="ci-row" id="ci-row-${i}">
-          <button class="ci-toggle" data-item="${it.name}" onclick="this.classList.toggle('on')"></button>
+          <button class="ci-toggle${doneToday ? ' on saved' : ''}" data-item="${it.name}" data-idx="${i}" data-saved="${doneToday}"></button>
           <span class="ci-name">${it.name}</span>
           <span class="ci-type">${it.type}</span>
+          <span class="ci-indicator" id="ci-ind-${i}"></span>
           <button class="ci-note-toggle" onclick="document.getElementById('ci-note-${i}').classList.toggle('open')" title="Add a note">+note</button>
         </div>
         <div class="ci-note-area" id="ci-note-${i}">
-          <input class="ci-note-input" data-item="${it.name}" placeholder="Optional note about ${it.name}">
+          <input class="ci-note-input" data-item="${it.name}" data-ind="ci-ind-${i}" placeholder="Optional note about ${it.name}">
         </div>`;
       });
 
@@ -292,10 +310,11 @@
           html += `<div class="ci-row ci-expand" onclick="document.getElementById('ci-note-${idx}').classList.toggle('open')">
             <span class="ci-name">${it.name}</span>
             <span class="ci-type">${it.type}${it.target_date ? ' \u00b7 ' + fmtTarget(it.target_date) : ''}</span>
+            <span class="ci-indicator" id="ci-ind-${idx}"></span>
             <span class="ci-note-toggle">+note</span>
           </div>
           <div class="ci-note-area" id="ci-note-${idx}">
-            <input class="ci-note-input" data-item="${it.name}" placeholder="Any progress on ${it.name}?">
+            <input class="ci-note-input" data-item="${it.name}" data-ind="ci-ind-${idx}" placeholder="Any progress on ${it.name}?">
           </div>`;
         });
         html += `</div>`;
@@ -305,7 +324,7 @@
       html += `<div class="ci-extra" id="win-section">
         <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
           <span class="ci-extra-title" style="color:#34d399">Any wins?</span>
-          <span class="ci-extra-hint">tap to add</span>
+          <span class="ci-extra-hint" id="win-ind">tap to add</span>
         </div>
         <div class="ci-extra-body">
           <input id="win-note" class="form-input" placeholder="Something good that happened">
@@ -331,81 +350,81 @@
           <input type="text" id="ci-more" class="form-input" placeholder="What do you need more of?">
           <label class="form-label">Less of</label>
           <input type="text" id="ci-less" class="form-input" placeholder="What do you need less of?">
+          <button class="ci-submit" id="reflect-submit" onclick="saveReflection()" style="margin-top:0.75rem">Save reflection</button>
+          <div class="ci-msg" id="reflect-msg"></div>
         </div>
       </div>`;
 
-      html += `<button class="ci-submit" id="ci-submit" onclick="submitAll()">Save check-in</button>`;
-      html += `<div class="ci-msg" id="ci-msg"></div>`;
-
       section.innerHTML = html;
 
-      // Wire up sliders
+      // Wire toggles — save on tap, lock when done
+      document.querySelectorAll('.ci-toggle').forEach(toggle => {
+        if (toggle.dataset.saved === 'true') return;
+        toggle.onclick = async () => {
+          if (toggle.classList.contains('on')) return;
+          toggle.classList.add('on', 'saved');
+          toggle.dataset.saved = 'true';
+          const name = toggle.dataset.item;
+          const ind = document.getElementById(`ci-ind-${toggle.dataset.idx}`);
+          await autoSaveLog(name, 'Done', ind);
+        };
+      });
+
+      // Wire note inputs — save on blur
+      document.querySelectorAll('.ci-note-input').forEach(input => {
+        input.onblur = async () => {
+          const note = input.value.trim();
+          if (!note) return;
+          const ind = document.getElementById(input.dataset.ind);
+          await autoSaveLog(input.dataset.item, note, ind);
+          input.value = '';
+        };
+      });
+
+      // Wire win input — save on blur
+      document.getElementById('win-note').onblur = async () => {
+        const note = document.getElementById('win-note').value.trim();
+        if (!note) return;
+        const ind = document.getElementById('win-ind');
+        ind.textContent = '·';
+        const res = await fetch('/api/wins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ note }) });
+        if (res.ok) {
+          ind.textContent = '✓ saved';
+          ind.style.color = '#34d399';
+          document.getElementById('win-note').value = '';
+          setTimeout(() => { ind.textContent = 'tap to add'; ind.style.color = ''; }, 2000);
+        }
+      };
+
+      // Wire sliders
       document.querySelectorAll('.form-range').forEach(r => {
         r.oninput = () => r.parentElement.querySelector('.form-range-val').textContent = r.value;
       });
     }
 
-    async function submitAll() {
-      const btn = document.getElementById('ci-submit');
-      const msg = document.getElementById('ci-msg');
+    async function saveReflection() {
+      const btn = document.getElementById('reflect-submit');
+      const msg = document.getElementById('reflect-msg');
       btn.disabled = true;
       btn.textContent = 'Saving...';
-      let saved = 0;
-
-      // Toggled-on Core/Habit items
-      const toggles = document.querySelectorAll('.ci-toggle.on');
-      for (const t of toggles) {
-        const name = t.dataset.item;
-        const noteEl = document.querySelector(`.ci-note-input[data-item="${name}"]`);
-        const note = noteEl ? noteEl.value.trim() : '';
-        const logNote = note || 'Done';
-        const res = await fetch(`/api/items/${encodeURIComponent(name)}/log`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ note: logNote }) });
-        if (res.ok) saved++;
-      }
-
-      // Notes on Dream/Goal items (only if they typed something)
-      const noteInputs = document.querySelectorAll('.ci-note-input');
-      for (const input of noteInputs) {
-        const name = input.dataset.item;
-        const note = input.value.trim();
-        if (!note) continue;
-        // Skip if already logged via toggle
-        const toggle = document.querySelector(`.ci-toggle[data-item="${name}"]`);
-        if (toggle && toggle.classList.contains('on')) continue;
-        const res = await fetch(`/api/items/${encodeURIComponent(name)}/log`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ note }) });
-        if (res.ok) saved++;
-      }
-
-      // Win
-      const winNote = document.getElementById('win-note').value.trim();
-      if (winNote) {
-        const res = await fetch('/api/wins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ note: winNote }) });
-        if (res.ok) saved++;
-      }
-
-      // Reflection (only if section was opened)
-      if (document.getElementById('reflect-section').classList.contains('open')) {
-        const data = {
-          body: parseInt(document.getElementById('ci-body').value),
-          mind: parseInt(document.getElementById('ci-mind').value),
-          social: parseInt(document.getElementById('ci-social').value),
-          feeling: document.getElementById('ci-feeling').value.trim() || null,
-          more_of: document.getElementById('ci-more').value.trim() || null,
-          less_of: document.getElementById('ci-less').value.trim() || null
-        };
-        const res = await fetch('/api/checkins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-        if (res.ok) saved++;
-      }
-
-      if (saved > 0) {
-        msg.textContent = `Saved ${saved} ${saved === 1 ? 'entry' : 'entries'}`;
+      const data = {
+        body: parseInt(document.getElementById('ci-body').value),
+        mind: parseInt(document.getElementById('ci-mind').value),
+        social: parseInt(document.getElementById('ci-social').value),
+        feeling: document.getElementById('ci-feeling').value.trim() || null,
+        more_of: document.getElementById('ci-more').value.trim() || null,
+        less_of: document.getElementById('ci-less').value.trim() || null
+      };
+      const res = await fetch('/api/checkins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+      if (res.ok) {
+        msg.textContent = '✓ Saved';
         msg.className = 'ci-msg';
-        setTimeout(() => location.reload(), 800);
+        btn.textContent = 'Saved';
       } else {
-        msg.textContent = 'Nothing to save — toggle an item or write a note';
+        msg.textContent = 'Error saving';
         msg.className = 'ci-msg error';
         btn.disabled = false;
-        btn.textContent = 'Save check-in';
+        btn.textContent = 'Save reflection';
       }
     }
 
