@@ -110,7 +110,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   os.Getenv("FLY_APP_NAME") != "",
 		SameSite: http.SameSiteLaxMode,
 	})
 	writeJSON(w, map[string]string{"status": "logged out"})
@@ -142,7 +142,7 @@ func setSession(w http.ResponseWriter, userID int64) {
 		Path:     "/",
 		Expires:  expires,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   os.Getenv("FLY_APP_NAME") != "",
 		SameSite: http.SameSiteLaxMode,
 	})
 }
