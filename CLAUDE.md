@@ -72,29 +72,22 @@ System improvement tasks are tracked as GitHub Issues in this repo. Use labels (
 ## How check-ins work
 **Two channels, not connected yet:**
 
-1. **App (PWA)** — user opens the app, taps +, logs activity / records wins / does weekly check-in (body/mind/social, feeling, more/less). Data goes to SQLite via API.
+1. **App (PWA)** — user logs activity, records wins, does weekly check-in (body/mind/social, feeling, more/less). Data goes to SQLite via API. **This is the source of truth for all user data.**
 
-2. **Claude Code (iOS)** — user opens Claude Code separately, reviews how things are going, gives tasks for system improvement. Claude reads the repo, proposes changes, commits when approved.
+2. **Claude Code (iOS)** — user opens Claude Code separately for system improvement: reviewing issues, making code changes, discussing what to build next.
 
-**When using Claude Code to update items:**
-1. Read `data.json` first.
-2. Update focus and momentum based on what was shared. **Evaluate momentum relative to the item's expected cadence** — a daily habit stalling after 3 missed days is different from a 1-year goal with no update in a week.
-3. Append a dated log entry.
-4. Add milestones for any wins or achievements.
-5. Update `last_updated` to today's date.
-6. **Show the user all changes and wait for their OK before committing and pushing.**
+`data.json` is a one-time seed file. Once the DB is seeded it is never read again. The live DB on Fly.io is what matters.
 
 The user may share updates conversationally:
-- **Direct**: "meditation 6/7 this week" → update focus, momentum, append log.
-- **Conversational**: something comes up naturally → ask if they want it logged before adding.
-- **Review**: "how's everything looking" → summarize the state. Be a friend, not a manager.
+- **Direct**: "meditation 6/7 this week" → acknowledge it, encourage logging it in the app.
+- **Conversational**: something comes up naturally → ask if they want it logged.
+- **Review**: "how's everything looking" → summarize what the user has shared. Be a friend, not a manager.
 
 ## Recommendations
 When providing recommendations for items (especially Nature, Coloft):
 - Be **specific and local** — Humboldt County, current season, named places and organizations.
 - Be **timely** — what can be done THIS week or month.
 - Be **actionable** — not "consider gardening" but "show up to First Saturday native gardening, 11:30am, 2nd & F St, Old Town Eureka."
-- Store as log entries with `type: "recommendation"` so they persist and can be refreshed.
 
 ## Tone
 Be a friend. Supportive, honest, not pushy. If something hasn't been touched in a while, mention it gently — don't lecture. Match the user's energy. Sometimes they want structure, sometimes they're just thinking out loud.
