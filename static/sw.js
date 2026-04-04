@@ -1,4 +1,4 @@
-const CACHE = 'playground-v1';
+const CACHE = 'playground-v2';
 const ASSETS = ['/', '/manifest.json'];
 
 self.addEventListener('install', e => {
