@@ -15,7 +15,6 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=builder /app/server .
 COPY data.json ./data.json
-COPY tasks.json ./tasks.json
 COPY static/ ./static/
 
 EXPOSE 8080
