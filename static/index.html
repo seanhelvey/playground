@@ -192,22 +192,8 @@
   <h1>Playground</h1>
   <p class="intro">A personal flywheel. Build, act, learn, repeat.</p>
 
-  <div class="pulse" id="pulse"></div>
-  <div class="checkin-bar hidden" id="checkin-bar"></div>
-
   <h2>Check-in</h2>
   <div class="ci-section" id="checkin-section"></div>
-
-  <h2>Tracker</h2>
-  <table>
-    <thead><tr><th></th><th>Name</th><th>Momentum</th><th>Milestones</th><th>Updated</th></tr></thead>
-    <tbody id="tracker-body"></tbody>
-  </table>
-
-  <div id="wins-section" class="hidden">
-    <h2>Wins</h2>
-    <ul class="wins-list" id="wins-list"></ul>
-  </div>
 
   <script>
     /* ── Auth ── */
@@ -294,10 +280,6 @@
           <span class="ci-name">${it.name}</span>
           <span class="ci-type">${it.type}</span>
           <span class="ci-indicator" id="ci-ind-${i}"></span>
-          <button class="ci-note-toggle" onclick="document.getElementById('ci-note-${i}').classList.toggle('open')" title="Add a note">+note</button>
-        </div>
-        <div class="ci-note-area" id="ci-note-${i}">
-          <input class="ci-note-input" data-item="${it.name}" data-ind="ci-ind-${i}" placeholder="Optional note about ${it.name}">
         </div>`;
       });
 
@@ -331,8 +313,8 @@
         </div>
       </div>`;
 
-      // How are you?
-      html += `<div class="ci-extra" id="reflect-section">
+      // How are you? — always expanded
+      html += `<div class="ci-extra open" id="reflect-section">
         <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
           <span class="ci-extra-title" style="color:#a78bfa">How are you?</span>
           <span class="ci-extra-hint">body / mind / social</span>
@@ -346,10 +328,6 @@
           <div class="form-range-row"><input type="range" id="ci-social" class="form-range" min="1" max="10" value="5"><span class="form-range-val">5</span></div>
           <label class="form-label">One word — how are you feeling?</label>
           <input type="text" id="ci-feeling" class="form-input" placeholder="e.g. hopeful, tired, restless">
-          <label class="form-label">More of</label>
-          <input type="text" id="ci-more" class="form-input" placeholder="What do you need more of?">
-          <label class="form-label">Less of</label>
-          <input type="text" id="ci-less" class="form-input" placeholder="What do you need less of?">
           <button class="ci-submit" id="reflect-submit" onclick="saveReflection()" style="margin-top:0.75rem">Save reflection</button>
           <div class="ci-msg" id="reflect-msg"></div>
         </div>
@@ -411,9 +389,7 @@
         body: parseInt(document.getElementById('ci-body').value),
         mind: parseInt(document.getElementById('ci-mind').value),
         social: parseInt(document.getElementById('ci-social').value),
-        feeling: document.getElementById('ci-feeling').value.trim() || null,
-        more_of: document.getElementById('ci-more').value.trim() || null,
-        less_of: document.getElementById('ci-less').value.trim() || null
+        feeling: document.getElementById('ci-feeling').value.trim() || null
       };
       const res = await fetch('/api/checkins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
       if (res.ok) {
@@ -465,17 +441,10 @@
 
     /* ── Load ── */
     Promise.all([
-      fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); }),
-      fetch('/api/checkins').then(r => r.ok ? r.json() : []),
-      fetch('/api/wins').then(r => r.ok ? r.json() : [])
-    ]).then(([items, checkins, wins]) => {
+      fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); })
+    ]).then(([items]) => {
       items.sort((a, b) => (MOMENTUM_ORDER[a.momentum]||3) - (MOMENTUM_ORDER[b.momentum]||3));
-      renderPulse(items);
-      renderCheckinBar(checkins);
       renderCheckinSection(items);
-      const tbody = document.getElementById('tracker-body');
-      items.forEach(item => { const [r, d] = renderRow(item); tbody.appendChild(r); tbody.appendChild(d); });
-      renderWins(wins);
     }).catch(err => {
       if (err.message === 'unauthorized') showLogin();
       else console.error(err);
