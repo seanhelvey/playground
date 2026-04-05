@@ -16,6 +16,16 @@ Open `http://localhost:8080`. The server seeds SQLite from `data.json` on first 
 ## Deploy
 Pushing to `main` triggers an automatic deploy via `.github/workflows/deploy.yml`. Requires `FLY_API_TOKEN` set as a GitHub Actions secret.
 
+**Verify a deploy succeeded:**
+```bash
+# Check GitHub Actions (unauthenticated, rate-limited to 60/hr)
+curl -s "https://api.github.com/repos/seanhelvey/playground/actions/runs?per_page=1" | python3 -c "import json,sys; r=json.load(sys.stdin)['workflow_runs'][0]; print(r['conclusion'], r['display_title'])"
+
+# Check what SHA is live on Fly.io
+curl -s https://playground-flywheel.fly.dev/api/health
+```
+Compare the `sha` in the health response to the latest git commit (`git rev-parse --short HEAD`).
+
 ## Data model
 
 ### Items (`data.json`)

@@ -125,5 +125,9 @@ func writeJSON(w http.ResponseWriter, v any) {
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, map[string]string{"status": "ok", "time": time.Now().Format(time.RFC3339)})
+	sha := os.Getenv("GIT_SHA")
+	if sha == "" {
+		sha = "dev"
+	}
+	writeJSON(w, map[string]string{"status": "ok", "sha": sha, "time": time.Now().Format(time.RFC3339)})
 }

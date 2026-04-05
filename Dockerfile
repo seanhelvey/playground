@@ -11,6 +11,8 @@ RUN CGO_ENABLED=1 go build -o server .
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
+ARG GIT_SHA=dev
+ENV GIT_SHA=$GIT_SHA
 
 WORKDIR /app
 COPY --from=builder /app/server .
