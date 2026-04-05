@@ -491,6 +491,20 @@
       else console.error(err);
     });
   </script>
-  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+    // Reload when returning to app if it's a new day or been hidden 10+ minutes
+    let hiddenAt = null;
+    const loadDate = new Date().toISOString().slice(0, 10);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+      } else {
+        const newDay = new Date().toISOString().slice(0, 10) !== loadDate;
+        const longAway = hiddenAt && (Date.now() - hiddenAt) > 10 * 60 * 1000;
+        if (newDay || longAway) location.reload();
+      }
+    });
+  </script>
 </body>
 </html>
