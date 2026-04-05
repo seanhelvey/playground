@@ -448,7 +448,7 @@
     Promise.all([
       fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); })
     ]).then(([items]) => {
-      items.sort((a, b) => (MOMENTUM_ORDER[a.momentum]||3) - (MOMENTUM_ORDER[b.momentum]||3));
+      items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
       renderCheckinSection(items);
     }).catch(err => {
       if (err.message === 'unauthorized') showLogin();
