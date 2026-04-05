@@ -293,9 +293,10 @@
       const section = document.getElementById('checkin-section');
       let html = '';
 
-      const checkinItems = items.filter(i => i.name !== 'Stick with the process');
+      const dailyItems = items.filter(i => i.name !== 'Stick with the process' && i.type !== 'Goal');
+      const goalItems  = items.filter(i => i.name !== 'Stick with the process' && i.type === 'Goal');
 
-      checkinItems.forEach((it, i) => {
+      dailyItems.forEach((it, i) => {
         if (it.input_type === 'counter') {
           const total = todayTotal(it);
           const label = fmtCount(total, it.step_unit);
@@ -334,6 +335,25 @@
           <div class="form-range-row"><input type="range" id="ci-social" class="form-range" min="1" max="10" value="5"><span class="form-range-val">5</span></div>
         </div>
       </div>`;
+
+      // Goals section
+      if (goalItems.length) {
+        html += `<div style="border-top:1px solid #2a2d3a;margin-top:0.75rem;padding-top:0.75rem">
+          <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#c4cbd5;margin-bottom:0.6rem">Goals</div>`;
+        goalItems.forEach((it, gi) => {
+          const lastLog = (it.log || [])[0];
+          const hint = lastLog ? `${fmtDate(lastLog.date)}: ${lastLog.note}` : 'No updates yet';
+          const mom = it.momentum;
+          const momColor = { rising: '#34d399', steady: '#60a5fa', stalling: '#fbbf24', dormant: '#555b66' }[mom] || '#555b66';
+          html += `<div class="ci-row" style="flex-wrap:wrap;gap:0.4rem">
+            <span class="ci-name">${it.name}</span>
+            <span style="font-size:0.72rem;color:${momColor};margin-left:auto">${mom}</span>
+            <span class="ci-indicator" id="ci-gind-${gi}"></span>
+            <textarea class="ci-note-inline ci-goal-note" rows="1" placeholder="${hint}" data-item="${it.name}" data-gind="${gi}"></textarea>
+          </div>`;
+        });
+        html += `</div>`;
+      }
 
       section.innerHTML = html;
 
@@ -380,6 +400,18 @@
           const ind = document.getElementById(input.dataset.ind);
           await autoSaveLog(input.dataset.item, note, ind);
           input.value = '';
+        };
+      });
+
+      // Wire goal note textareas — save on blur
+      document.querySelectorAll('.ci-goal-note').forEach(ta => {
+        ta.onblur = async () => {
+          const note = ta.value.trim();
+          if (!note) return;
+          const ind = document.getElementById(`ci-gind-${ta.dataset.gind}`);
+          await autoSaveLog(ta.dataset.item, note, ind);
+          ta.value = '';
+          ta.placeholder = `${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}: ${note}`;
         };
       });
 

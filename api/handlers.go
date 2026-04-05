@@ -45,7 +45,7 @@ type Milestone struct {
 }
 
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit, display_order FROM items ORDER BY display_order, name")
+	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit, display_order FROM items WHERE active = 1 ORDER BY display_order, name")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
@@ -84,7 +84,7 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 func handleGetItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	var it Item
-	err := db.QueryRow("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit FROM items WHERE name = ?", name).
+	err := db.QueryRow("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit FROM items WHERE name = ? AND active = 1", name).
 		Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit)
 	if err != nil {
 		http.Error(w, "not found", 404)

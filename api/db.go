@@ -99,6 +99,7 @@ func migrateAlter(db *sql.DB) error {
 		"ALTER TABLE items ADD COLUMN step_size INTEGER NOT NULL DEFAULT 0",
 		"ALTER TABLE items ADD COLUMN step_unit TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE items ADD COLUMN display_order INTEGER NOT NULL DEFAULT 99",
+		"ALTER TABLE items ADD COLUMN active INTEGER NOT NULL DEFAULT 1",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
@@ -121,7 +122,6 @@ func migrateAlter(db *sql.DB) error {
 		{"Dancing", "counter", "weekly", "min", 15, 6},
 		{"Music", "counter", "weekly", "min", 15, 7},
 		{"Nature", "note", "ongoing", "", 0, 8},
-		{"Coloft", "note", "ongoing", "", 0, 9},
 		{"Own a home", "note", "monthly", "", 0, 10},
 		{"Build fallback income", "note", "monthly", "", 0, 11},
 		{"Deploy a full-stack project", "note", "ongoing", "", 0, 12},
@@ -134,5 +134,6 @@ func migrateAlter(db *sql.DB) error {
 			u.inputType, u.cadence, u.stepSize, u.stepUnit, u.order, u.name,
 		)
 	}
+	db.Exec("UPDATE items SET active = 0 WHERE name = 'Coloft'")
 	return nil
 }
