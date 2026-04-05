@@ -58,23 +58,25 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 		var it Item
 		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit, &it.DisplayOrder)
 
-		logRows, _ := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", it.Name)
 		it.Log = []LogEntry{}
-		for logRows.Next() {
-			var l LogEntry
-			logRows.Scan(&l.ID, &l.Date, &l.Type, &l.Note)
-			it.Log = append(it.Log, l)
+		if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", it.Name); err == nil {
+			for logRows.Next() {
+				var l LogEntry
+				logRows.Scan(&l.ID, &l.Date, &l.Type, &l.Note)
+				it.Log = append(it.Log, l)
+			}
+			logRows.Close()
 		}
-		logRows.Close()
 
-		msRows, _ := db.Query("SELECT id, date, label FROM milestones WHERE item_name = ? ORDER BY date DESC", it.Name)
 		it.Milestones = []Milestone{}
-		for msRows.Next() {
-			var m Milestone
-			msRows.Scan(&m.ID, &m.Date, &m.Label)
-			it.Milestones = append(it.Milestones, m)
+		if msRows, err := db.Query("SELECT id, date, label FROM milestones WHERE item_name = ? ORDER BY date DESC", it.Name); err == nil {
+			for msRows.Next() {
+				var m Milestone
+				msRows.Scan(&m.ID, &m.Date, &m.Label)
+				it.Milestones = append(it.Milestones, m)
+			}
+			msRows.Close()
 		}
-		msRows.Close()
 
 		items = append(items, it)
 	}
@@ -91,23 +93,25 @@ func handleGetItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logRows, _ := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", name)
 	it.Log = []LogEntry{}
-	for logRows.Next() {
-		var l LogEntry
-		logRows.Scan(&l.ID, &l.Date, &l.Type, &l.Note)
-		it.Log = append(it.Log, l)
+	if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", name); err == nil {
+		for logRows.Next() {
+			var l LogEntry
+			logRows.Scan(&l.ID, &l.Date, &l.Type, &l.Note)
+			it.Log = append(it.Log, l)
+		}
+		logRows.Close()
 	}
-	logRows.Close()
 
-	msRows, _ := db.Query("SELECT id, date, label FROM milestones WHERE item_name = ? ORDER BY date DESC", name)
 	it.Milestones = []Milestone{}
-	for msRows.Next() {
-		var m Milestone
-		msRows.Scan(&m.ID, &m.Date, &m.Label)
-		it.Milestones = append(it.Milestones, m)
+	if msRows, err := db.Query("SELECT id, date, label FROM milestones WHERE item_name = ? ORDER BY date DESC", name); err == nil {
+		for msRows.Next() {
+			var m Milestone
+			msRows.Scan(&m.ID, &m.Date, &m.Label)
+			it.Milestones = append(it.Milestones, m)
+		}
+		msRows.Close()
 	}
-	msRows.Close()
 
 	writeJSON(w, it)
 }
