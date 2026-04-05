@@ -79,7 +79,13 @@ func main() {
 		staticDir = "../static"
 	}
 	staticDir, _ = filepath.Abs(staticDir)
-	mux.Handle("/", http.FileServer(http.Dir(staticDir)))
+	fs := http.FileServer(http.Dir(staticDir))
+	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/sw.js" {
+			w.Header().Set("Cache-Control", "no-cache")
+		}
+		fs.ServeHTTP(w, r)
+	}))
 
 	log.Printf("listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, corsMiddleware(mux)))
