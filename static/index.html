@@ -290,7 +290,7 @@
       return unit === 'min' ? `${val}m` : `${val}`;
     }
 
-    function renderCheckinSection(items) {
+    function renderCheckinSection(items, todayCheckin) {
       const section = document.getElementById('checkin-section');
       let html = '';
 
@@ -467,10 +467,12 @@
 
     /* ── Load ── */
     Promise.all([
-      fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); })
-    ]).then(([items]) => {
+      fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); }),
+      fetch('/api/checkins').then(r => r.ok ? r.json() : [])
+    ]).then(([items, checkins]) => {
       items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
-      renderCheckinSection(items);
+      const todayCheckin = checkins.find(c => c.date === today) || null;
+      renderCheckinSection(items, todayCheckin);
     }).catch(err => {
       if (err.message === 'unauthorized') showLogin();
       else console.error(err);

@@ -5,6 +5,11 @@ A personal flywheel for habits, dreams, goals, and projects. Go API + SQLite + P
 ## Git
 - Push directly to `main`, no branches.
 
+## Working with Claude
+- **Discuss before changing.** Talk through the approach first. Don't start writing code until the user agrees on the plan.
+- **Track work in GitHub Issues.** Every bug or feature should have an issue. Reference it in commits.
+- **Don't make unrequested changes.** Fix what was asked, nothing more.
+
 ## Local dev
 ```bash
 cd api

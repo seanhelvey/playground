@@ -173,7 +173,7 @@ type CheckIn struct {
 }
 
 func handleGetCheckins(w http.ResponseWriter, r *http.Request) {
-	rows, _ := db.Query("SELECT id, date, body, mind, social, feeling, more_of, less_of FROM check_ins ORDER BY date DESC LIMIT 12")
+	rows, _ := db.Query("SELECT id, date, body, mind, social, feeling, more_of, less_of FROM check_ins ORDER BY date DESC, id DESC LIMIT 12")
 	defer rows.Close()
 	checkins := []CheckIn{}
 	for rows.Next() {
