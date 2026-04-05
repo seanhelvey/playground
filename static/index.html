@@ -71,6 +71,7 @@
       width: 40px; height: 24px; border-radius: 12px;
       background: #2a2d3a; border: none; cursor: pointer;
       position: relative; flex-shrink: 0; transition: background 0.15s;
+      touch-action: manipulation;
     }
     .ci-toggle::after {
       content: ''; position: absolute; top: 3px; left: 3px;
@@ -98,6 +99,7 @@
       width: 32px; height: 32px; border-radius: 50%; border: 1px solid #2a2d3a;
       background: #1a1d27; color: #e2e4e9; font-size: 1.1rem; cursor: pointer;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      touch-action: manipulation;
     }
     .ci-counter-btn:active { background: #2a2d3a; }
     .ci-counter-val { min-width: 3ch; text-align: center; font-weight: 600; font-size: 0.95rem; color: #34d399; }
@@ -142,7 +144,6 @@
     .ci-msg { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #34d399; }
     .ci-msg.error { color: #f87171; }
     .ci-indicator { font-size: 0.85rem; color: #34d399; min-width: 1.5ch; margin-left: auto; }
-    .ci-toggle.saved { opacity: 0.6; cursor: default; }
 
     /* ── Tracker table ── */
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
@@ -310,9 +311,11 @@
             </div>
           </div>`;
         } else {
-          const doneToday = (it.log || []).some(e => e.date === today);
+          const todayLogs = (it.log || []).filter(e => e.date === today);
+          const lastNote = todayLogs.length ? todayLogs[0].note : '';
+          const doneToday = lastNote === 'Done';
           html += `<div class="ci-row" id="ci-row-${i}">
-            <button class="ci-toggle${doneToday ? ' on saved' : ''}" data-item="${it.name}" data-idx="${i}" data-saved="${doneToday}"></button>
+            <button class="ci-toggle${doneToday ? ' on' : ''}" data-item="${it.name}" data-idx="${i}"></button>
             <span class="ci-name">${it.name}</span>
             <span class="ci-indicator" id="ci-ind-${i}"></span>
           </div>`;
@@ -356,16 +359,14 @@
 
       section.innerHTML = html;
 
-      // Wire toggles — save on tap, lock when done
+      // Wire toggles — tap-on logs "Done", tap-off logs "Undone"
       document.querySelectorAll('.ci-toggle').forEach(toggle => {
-        if (toggle.dataset.saved === 'true') return;
         toggle.onclick = async () => {
-          if (toggle.classList.contains('on')) return;
-          toggle.classList.add('on', 'saved');
-          toggle.dataset.saved = 'true';
+          const isOn = toggle.classList.contains('on');
+          toggle.classList.toggle('on');
           const name = toggle.dataset.item;
           const ind = document.getElementById(`ci-ind-${toggle.dataset.idx}`);
-          await autoSaveLog(name, 'Done', ind);
+          await autoSaveLog(name, isOn ? 'Undone' : 'Done', ind);
         };
       });
 
