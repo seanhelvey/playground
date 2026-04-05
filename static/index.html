@@ -324,6 +324,9 @@
 
 
       // Body / Mind / Social — always visible, auto-save on release
+      const bodyVal   = (todayCheckin && todayCheckin.body   != null) ? todayCheckin.body   : 5;
+      const mindVal   = (todayCheckin && todayCheckin.mind   != null) ? todayCheckin.mind   : 5;
+      const socialVal = (todayCheckin && todayCheckin.social != null) ? todayCheckin.social : 5;
       html += `<div class="ci-extra open" id="reflect-section" style="border-top:1px solid #2a2d3a;margin-top:0.75rem;padding-top:0.75rem">
         <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
           <span class="ci-extra-title" style="color:#a78bfa">Body / Mind / Social</span>
@@ -331,11 +334,11 @@
         </div>
         <div class="ci-extra-body">
           <label class="form-label">Body</label>
-          <div class="form-range-row"><input type="range" id="ci-body" class="form-range" min="1" max="10" value="5"><span class="form-range-val">5</span></div>
+          <div class="form-range-row"><input type="range" id="ci-body" class="form-range" min="1" max="10" value="${bodyVal}"><span class="form-range-val">${bodyVal}</span></div>
           <label class="form-label">Mind</label>
-          <div class="form-range-row"><input type="range" id="ci-mind" class="form-range" min="1" max="10" value="5"><span class="form-range-val">5</span></div>
+          <div class="form-range-row"><input type="range" id="ci-mind" class="form-range" min="1" max="10" value="${mindVal}"><span class="form-range-val">${mindVal}</span></div>
           <label class="form-label">Social</label>
-          <div class="form-range-row"><input type="range" id="ci-social" class="form-range" min="1" max="10" value="5"><span class="form-range-val">5</span></div>
+          <div class="form-range-row"><input type="range" id="ci-social" class="form-range" min="1" max="10" value="${socialVal}"><span class="form-range-val">${socialVal}</span></div>
         </div>
       </div>`;
 
