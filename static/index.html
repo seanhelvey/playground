@@ -179,6 +179,27 @@
     .win-date { flex-shrink: 0; color: #bcc3cd; font-size: 0.9rem; }
     .win-icon { color: #34d399; flex-shrink: 0; }
 
+    /* ── Activity log ── */
+    #activity-log {
+      background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px;
+      overflow: hidden;
+    }
+    .al-entry {
+      display: flex; align-items: baseline; gap: 0.6rem;
+      padding: 0.55rem 1rem; border-bottom: 1px solid #1e2130;
+      font-size: 0.88rem;
+    }
+    .al-entry:last-child { border-bottom: none; }
+    .al-date { color: #555b66; white-space: nowrap; flex-shrink: 0; font-size: 0.78rem; }
+    .al-item { color: #60a5fa; flex-shrink: 0; }
+    .al-note { color: #c9cdd5; flex: 1; }
+    .al-more {
+      display: block; width: 100%; padding: 0.6rem;
+      background: none; border: none; border-top: 1px solid #2a2d3a;
+      color: #555b66; font-size: 0.82rem; cursor: pointer; text-align: center;
+    }
+    .al-more:hover { color: #bcc3cd; }
+
     /* ── Mobile ── */
     @media (max-width: 700px) {
       body { padding: 24px 16px 60px; }
@@ -209,6 +230,9 @@
 
   <h2>Check-in</h2>
   <div class="ci-section" id="checkin-section"></div>
+
+  <h2 style="margin-top:2.5rem">Recent Activity</h2>
+  <div id="activity-log"></div>
 
   <script>
     /* ── Auth ── */
@@ -468,6 +492,33 @@
       });
     }
 
+    /* ── Activity log ── */
+    function renderActivityLog(items, limit) {
+      const PAGE = limit || 20;
+      const all = [];
+      items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note })));
+      all.sort((a, b) => b.id - a.id);
+
+      const container = document.getElementById('activity-log');
+      container.innerHTML = '';
+      if (!all.length) { container.innerHTML = '<div class="al-entry" style="color:#555b66">No activity yet.</div>'; return; }
+
+      all.slice(0, PAGE).forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'al-entry';
+        div.innerHTML = `<span class="al-date">${e.date}</span><span class="al-item">${e.item}</span><span class="al-note">${e.note}</span>`;
+        container.appendChild(div);
+      });
+
+      if (all.length > PAGE) {
+        const btn = document.createElement('button');
+        btn.className = 'al-more';
+        btn.textContent = `Show more (${all.length - PAGE} remaining)`;
+        btn.onclick = () => renderActivityLog(items, PAGE + 20);
+        container.appendChild(btn);
+      }
+    }
+
     /* ── Load ── */
     Promise.all([
       fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); }),
@@ -476,6 +527,7 @@
       items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
       const todayCheckin = checkins.find(c => c.date === today) || null;
       renderCheckinSection(items, todayCheckin);
+      renderActivityLog(items);
     }).catch(err => {
       if (err.message === 'unauthorized') showLogin();
       else console.error(err);
