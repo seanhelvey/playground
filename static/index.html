@@ -293,7 +293,13 @@
       const section = document.getElementById('checkin-section');
       let html = '';
 
-      const daily = items.filter(i => i.input_type === 'boolean' || i.input_type === 'counter');
+      const daily = items
+        .filter(i => i.input_type === 'boolean' || i.input_type === 'counter')
+        .sort((a, b) => {
+          const cadenceOrder = { daily: 0, weekly: 1, monthly: 2, ongoing: 3 };
+          const cd = (cadenceOrder[a.cadence] ?? 4) - (cadenceOrder[b.cadence] ?? 4);
+          return cd !== 0 ? cd : a.name.localeCompare(b.name);
+        });
 
       daily.forEach((it, i) => {
         if (it.input_type === 'counter') {
@@ -321,22 +327,11 @@
       });
 
 
-      // Win
-      html += `<div class="ci-extra" id="win-section">
+      // Body / Mind / Social — always visible, auto-save on release
+      html += `<div class="ci-extra open" id="reflect-section" style="border-top:1px solid #2a2d3a;margin-top:0.75rem;padding-top:0.75rem">
         <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
-          <span class="ci-extra-title" style="color:#34d399">Any wins?</span>
-          <span class="ci-extra-hint" id="win-ind">tap to add</span>
-        </div>
-        <div class="ci-extra-body">
-          <input id="win-note" class="form-input" placeholder="Something good that happened">
-        </div>
-      </div>`;
-
-      // How are you? — always expanded
-      html += `<div class="ci-extra open" id="reflect-section">
-        <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
-          <span class="ci-extra-title" style="color:#a78bfa">How are you?</span>
-          <span class="ci-extra-hint">body / mind / social</span>
+          <span class="ci-extra-title" style="color:#a78bfa">Body / Mind / Social</span>
+          <span class="ci-indicator" id="ci-ind-reflect"></span>
         </div>
         <div class="ci-extra-body">
           <label class="form-label">Body</label>
@@ -345,10 +340,6 @@
           <div class="form-range-row"><input type="range" id="ci-mind" class="form-range" min="1" max="10" value="5"><span class="form-range-val">5</span></div>
           <label class="form-label">Social</label>
           <div class="form-range-row"><input type="range" id="ci-social" class="form-range" min="1" max="10" value="5"><span class="form-range-val">5</span></div>
-          <label class="form-label">One word — how are you feeling?</label>
-          <input type="text" id="ci-feeling" class="form-input" placeholder="e.g. hopeful, tired, restless">
-          <button class="ci-submit" id="reflect-submit" onclick="saveReflection()" style="margin-top:0.75rem">Save reflection</button>
-          <div class="ci-msg" id="reflect-msg"></div>
         </div>
       </div>`;
 
@@ -400,48 +391,29 @@
         };
       });
 
-      // Wire win input — save on blur
-      document.getElementById('win-note').onblur = async () => {
-        const note = document.getElementById('win-note').value.trim();
-        if (!note) return;
-        const ind = document.getElementById('win-ind');
-        ind.textContent = '·';
-        const res = await fetch('/api/wins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ note }) });
-        if (res.ok) {
-          ind.textContent = '✓ saved';
-          ind.style.color = '#34d399';
-          document.getElementById('win-note').value = '';
-          setTimeout(() => { ind.textContent = 'tap to add'; ind.style.color = ''; }, 2000);
-        }
-      };
-
-      // Wire sliders
+      // Wire sliders — update display on drag, save on release
+      let reflectTimer = null;
       document.querySelectorAll('.form-range').forEach(r => {
         r.oninput = () => r.parentElement.querySelector('.form-range-val').textContent = r.value;
+        r.onchange = () => {
+          clearTimeout(reflectTimer);
+          reflectTimer = setTimeout(saveReflection, 600);
+        };
       });
     }
 
     async function saveReflection() {
-      const btn = document.getElementById('reflect-submit');
-      const msg = document.getElementById('reflect-msg');
-      btn.disabled = true;
-      btn.textContent = 'Saving...';
+      const ind = document.getElementById('ci-ind-reflect');
       const data = {
         body: parseInt(document.getElementById('ci-body').value),
         mind: parseInt(document.getElementById('ci-mind').value),
-        social: parseInt(document.getElementById('ci-social').value),
-        feeling: document.getElementById('ci-feeling').value.trim() || null
+        social: parseInt(document.getElementById('ci-social').value)
       };
+      if (ind) ind.textContent = '·';
       const res = await fetch('/api/checkins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-      if (res.ok) {
-        msg.textContent = '✓ Saved';
-        msg.className = 'ci-msg';
-        btn.textContent = 'Saved';
-      } else {
-        msg.textContent = 'Error saving';
-        msg.className = 'ci-msg error';
-        btn.disabled = false;
-        btn.textContent = 'Save reflection';
+      if (ind) {
+        ind.textContent = res.ok ? '✓' : '✗';
+        setTimeout(() => { ind.textContent = ''; }, 1500);
       }
     }
 
