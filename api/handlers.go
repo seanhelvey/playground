@@ -20,6 +20,10 @@ type Item struct {
 	TargetDate      *string     `json:"target_date,omitempty"`
 	SuccessCriteria *string     `json:"success_criteria,omitempty"`
 	LastUpdated     string      `json:"last_updated"`
+	InputType       string      `json:"input_type"`
+	Cadence         string      `json:"cadence"`
+	StepSize        int         `json:"step_size"`
+	StepUnit        string      `json:"step_unit"`
 	Milestones      []Milestone `json:"milestones"`
 	Log             []LogEntry  `json:"log"`
 }
@@ -40,7 +44,7 @@ type Milestone struct {
 }
 
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated FROM items ORDER BY CASE momentum WHEN 'rising' THEN 0 WHEN 'steady' THEN 1 WHEN 'stalling' THEN 2 WHEN 'dormant' THEN 3 END")
+	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit FROM items ORDER BY CASE momentum WHEN 'rising' THEN 0 WHEN 'steady' THEN 1 WHEN 'stalling' THEN 2 WHEN 'dormant' THEN 3 END")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
@@ -51,7 +55,7 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 	items := []Item{}
 	for rows.Next() {
 		var it Item
-		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated)
+		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit)
 
 		logRows, _ := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY date DESC", it.Name)
 		it.Log = []LogEntry{}
@@ -79,8 +83,8 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 func handleGetItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	var it Item
-	err := db.QueryRow("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated FROM items WHERE name = ?", name).
-		Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated)
+	err := db.QueryRow("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit FROM items WHERE name = ?", name).
+		Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return

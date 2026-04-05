@@ -92,9 +92,23 @@
       color: #e2e4e9; font-size: 0.9rem; font-family: inherit; resize: none;
     }
 
-    /* Dream/Goal — tap to expand, note only */
-    .ci-expand { cursor: pointer; }
-    .ci-expand .ci-note-area { padding-left: 0; }
+    /* Counter */
+    .ci-counter { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+    .ci-counter-btn {
+      width: 32px; height: 32px; border-radius: 50%; border: 1px solid #2a2d3a;
+      background: #1a1d27; color: #e2e4e9; font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .ci-counter-btn:active { background: #2a2d3a; }
+    .ci-counter-val { min-width: 3ch; text-align: center; font-weight: 600; font-size: 0.95rem; color: #34d399; }
+
+    /* Note items — always visible input */
+    .ci-note-inline {
+      width: 100%; padding: 7px 10px; background: #0f1117;
+      border: 1px solid #2a2d3a; border-radius: 6px;
+      color: #e2e4e9; font-size: 0.9rem; font-family: inherit;
+      margin-top: 0.3rem;
+    }
 
     /* Win + reflection sections */
     .ci-extra {
@@ -267,40 +281,45 @@
       }
     }
 
+    function todayTotal(item) {
+      return (item.log || []).filter(e => e.date === today).reduce((s, e) => s + (parseInt(e.note) || 0), 0);
+    }
+
+    function fmtCount(val, unit) {
+      return unit === 'min' ? `${val}m` : `${val}`;
+    }
+
     function renderCheckinSection(items) {
       const section = document.getElementById('checkin-section');
       let html = '';
 
-      // Core + Habit items: toggle + optional note
-      const daily = items.filter(i => i.type === 'Core' || i.type === 'Habit');
+      const daily = items.filter(i => i.input_type === 'boolean' || i.input_type === 'counter');
+
       daily.forEach((it, i) => {
-        const doneToday = (it.log || []).some(e => e.date === today);
-        html += `<div class="ci-row" id="ci-row-${i}">
-          <button class="ci-toggle${doneToday ? ' on saved' : ''}" data-item="${it.name}" data-idx="${i}" data-saved="${doneToday}"></button>
-          <span class="ci-name">${it.name}</span>
-          <span class="ci-type">${it.type}</span>
-          <span class="ci-indicator" id="ci-ind-${i}"></span>
-        </div>`;
+        if (it.input_type === 'counter') {
+          const total = todayTotal(it);
+          const label = fmtCount(total, it.step_unit);
+          html += `<div class="ci-row" id="ci-row-${i}">
+            <span class="ci-name">${it.name}</span>
+            <span class="ci-type">${it.cadence}</span>
+            <span class="ci-indicator" id="ci-ind-${i}"></span>
+            <div class="ci-counter" id="ci-counter-${i}">
+              <button class="ci-counter-btn" data-item="${it.name}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-idx="${i}">−</button>
+              <span class="ci-counter-val" id="ci-val-${i}">${label}</span>
+              <button class="ci-counter-btn" data-item="${it.name}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-idx="${i}">+</button>
+            </div>
+          </div>`;
+        } else {
+          const doneToday = (it.log || []).some(e => e.date === today);
+          html += `<div class="ci-row" id="ci-row-${i}">
+            <button class="ci-toggle${doneToday ? ' on saved' : ''}" data-item="${it.name}" data-idx="${i}" data-saved="${doneToday}"></button>
+            <span class="ci-name">${it.name}</span>
+            <span class="ci-type">${it.cadence}</span>
+            <span class="ci-indicator" id="ci-ind-${i}"></span>
+          </div>`;
+        }
       });
 
-      // Dream + Goal items: tap to expand, write a note
-      const projects = items.filter(i => i.type === 'Dream' || i.type === 'Goal');
-      if (projects.length) {
-        html += `<div style="border-top:1px solid #2a2d3a;margin-top:0.5rem;padding-top:0.5rem">`;
-        projects.forEach((it, i) => {
-          const idx = daily.length + i;
-          html += `<div class="ci-row ci-expand" onclick="document.getElementById('ci-note-${idx}').classList.toggle('open')">
-            <span class="ci-name">${it.name}</span>
-            <span class="ci-type">${it.type}${it.target_date ? ' \u00b7 ' + fmtTarget(it.target_date) : ''}</span>
-            <span class="ci-indicator" id="ci-ind-${idx}"></span>
-            <span class="ci-note-toggle">+note</span>
-          </div>
-          <div class="ci-note-area" id="ci-note-${idx}">
-            <input class="ci-note-input" data-item="${it.name}" data-ind="ci-ind-${idx}" placeholder="Any progress on ${it.name}?">
-          </div>`;
-        });
-        html += `</div>`;
-      }
 
       // Win
       html += `<div class="ci-extra" id="win-section">
@@ -346,6 +365,28 @@
           const ind = document.getElementById(`ci-ind-${toggle.dataset.idx}`);
           await autoSaveLog(name, 'Done', ind);
         };
+      });
+
+      // Wire counter buttons
+      document.querySelectorAll('.ci-counter-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const step = parseInt(btn.dataset.step);
+          const idx = btn.dataset.idx;
+          const valEl = document.getElementById(`ci-val-${idx}`);
+          const ind = document.getElementById(`ci-ind-${idx}`);
+          const curRaw = parseInt(valEl.dataset.raw || '0');
+          const next = Math.max(0, curRaw + step);
+          if (next === curRaw && step < 0) return; // already at 0
+          valEl.dataset.raw = next;
+          valEl.textContent = fmtCount(next, btn.dataset.unit);
+          await autoSaveLog(btn.dataset.item, String(step), ind);
+        };
+      });
+
+      // Set raw counter values from rendered totals
+      document.querySelectorAll('.ci-counter-val').forEach((el, i) => {
+        const raw = parseInt(el.textContent) || 0;
+        el.dataset.raw = raw;
       });
 
       // Wire note inputs — save on blur
