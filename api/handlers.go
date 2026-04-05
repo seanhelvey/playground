@@ -58,7 +58,7 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 		var it Item
 		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit, &it.DisplayOrder)
 
-		logRows, _ := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY date DESC", it.Name)
+		logRows, _ := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", it.Name)
 		it.Log = []LogEntry{}
 		for logRows.Next() {
 			var l LogEntry
@@ -91,7 +91,7 @@ func handleGetItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logRows, _ := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY date DESC", name)
+	logRows, _ := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", name)
 	it.Log = []LogEntry{}
 	for logRows.Next() {
 		var l LogEntry
