@@ -98,6 +98,7 @@ func migrateAlter(db *sql.DB) error {
 		"ALTER TABLE items ADD COLUMN cadence TEXT NOT NULL DEFAULT 'daily'",
 		"ALTER TABLE items ADD COLUMN step_size INTEGER NOT NULL DEFAULT 0",
 		"ALTER TABLE items ADD COLUMN step_unit TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE items ADD COLUMN display_order INTEGER NOT NULL DEFAULT 99",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
@@ -107,26 +108,30 @@ func migrateAlter(db *sql.DB) error {
 
 	// Set correct input_type, cadence, step_size, step_unit for known items.
 	// Safe to re-run — only updates rows that still have the default value.
-	updates := []struct{ name, inputType, cadence, stepUnit string; stepSize int }{
-		{"Meditation", "counter", "daily", "min", 5},
-		{"Dancing", "counter", "weekly", "min", 15},
-		{"Music", "counter", "weekly", "min", 15},
-		{"Screen time", "boolean", "daily", "", 0},
-		{"DM a friend", "boolean", "daily", "", 0},
-		{"Fast after dinner", "boolean", "daily", "", 0},
-		{"Wake to alarm", "boolean", "daily", "", 0},
-		{"Stick with the process", "boolean", "daily", "", 0},
-		{"Coloft", "note", "ongoing", "", 0},
-		{"Nature", "note", "ongoing", "", 0},
-		{"Own a home", "note", "monthly", "", 0},
-		{"Build fallback income", "note", "monthly", "", 0},
-		{"Deploy a full-stack project", "note", "ongoing", "", 0},
-		{"Contribute to non-Django OSS", "note", "ongoing", "", 0},
+	type itemConfig struct {
+		name, inputType, cadence, stepUnit string
+		stepSize, order                    int
+	}
+	updates := []itemConfig{
+		{"Wake to alarm", "boolean", "daily", "", 0, 1},
+		{"Meditation", "counter", "daily", "min", 5, 2},
+		{"DM a friend", "boolean", "daily", "", 0, 3},
+		{"Fast after dinner", "boolean", "daily", "", 0, 4},
+		{"Screen time", "boolean", "daily", "", 0, 5},
+		{"Dancing", "counter", "weekly", "min", 15, 6},
+		{"Music", "counter", "weekly", "min", 15, 7},
+		{"Nature", "note", "ongoing", "", 0, 8},
+		{"Coloft", "note", "ongoing", "", 0, 9},
+		{"Own a home", "note", "monthly", "", 0, 10},
+		{"Build fallback income", "note", "monthly", "", 0, 11},
+		{"Deploy a full-stack project", "note", "ongoing", "", 0, 12},
+		{"Contribute to non-Django OSS", "note", "ongoing", "", 0, 13},
+		{"Stick with the process", "boolean", "daily", "", 0, 99},
 	}
 	for _, u := range updates {
 		db.Exec(
-			"UPDATE items SET input_type=?, cadence=?, step_size=?, step_unit=? WHERE name=?",
-			u.inputType, u.cadence, u.stepSize, u.stepUnit, u.name,
+			"UPDATE items SET input_type=?, cadence=?, step_size=?, step_unit=?, display_order=? WHERE name=?",
+			u.inputType, u.cadence, u.stepSize, u.stepUnit, u.order, u.name,
 		)
 	}
 	return nil

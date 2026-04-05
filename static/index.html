@@ -293,25 +293,18 @@
       const section = document.getElementById('checkin-section');
       let html = '';
 
-      const daily = items
-        .filter(i => i.input_type === 'boolean' || i.input_type === 'counter')
-        .sort((a, b) => {
-          const cadenceOrder = { daily: 0, weekly: 1, monthly: 2, ongoing: 3 };
-          const cd = (cadenceOrder[a.cadence] ?? 4) - (cadenceOrder[b.cadence] ?? 4);
-          return cd !== 0 ? cd : a.name.localeCompare(b.name);
-        });
+      const checkinItems = items.filter(i => i.name !== 'Stick with the process');
 
-      daily.forEach((it, i) => {
+      checkinItems.forEach((it, i) => {
         if (it.input_type === 'counter') {
           const total = todayTotal(it);
           const label = fmtCount(total, it.step_unit);
           html += `<div class="ci-row" id="ci-row-${i}">
             <span class="ci-name">${it.name}</span>
-            <span class="ci-type">${it.cadence}</span>
             <span class="ci-indicator" id="ci-ind-${i}"></span>
-            <div class="ci-counter" id="ci-counter-${i}">
+            <div class="ci-counter">
               <button class="ci-counter-btn" data-item="${it.name}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-idx="${i}">−</button>
-              <span class="ci-counter-val" id="ci-val-${i}">${label}</span>
+              <span class="ci-counter-val" id="ci-val-${i}" data-raw="${total}">${label}</span>
               <button class="ci-counter-btn" data-item="${it.name}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-idx="${i}">+</button>
             </div>
           </div>`;
@@ -320,7 +313,6 @@
           html += `<div class="ci-row" id="ci-row-${i}">
             <button class="ci-toggle${doneToday ? ' on saved' : ''}" data-item="${it.name}" data-idx="${i}" data-saved="${doneToday}"></button>
             <span class="ci-name">${it.name}</span>
-            <span class="ci-type">${it.cadence}</span>
             <span class="ci-indicator" id="ci-ind-${i}"></span>
           </div>`;
         }

@@ -44,7 +44,7 @@ type Milestone struct {
 }
 
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit FROM items ORDER BY CASE momentum WHEN 'rising' THEN 0 WHEN 'steady' THEN 1 WHEN 'stalling' THEN 2 WHEN 'dormant' THEN 3 END")
+	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit FROM items ORDER BY display_order, name")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
