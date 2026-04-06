@@ -459,8 +459,12 @@
       if (ind) ind.textContent = '·';
       const res = await fetch('/api/checkins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
       if (ind) {
-        ind.textContent = res.ok ? '✓' : '✗';
-        setTimeout(() => { ind.textContent = ''; }, 1500);
+        if (res.ok) {
+          ind.textContent = '✓'; ind.classList.remove('error');
+          setTimeout(() => { ind.textContent = ''; ind.classList.remove('error'); }, 1500);
+        } else {
+          res.text().then(t => { ind.textContent = `✗ ${res.status} ${t}`.trim(); ind.classList.add('error'); });
+        }
       }
     }
 
@@ -500,10 +504,16 @@
     }
 
     /* ── Activity log ── */
-    function renderActivityLog(items, limit) {
+    function renderActivityLog(items, checkins, limit) {
       const PAGE = limit || 20;
       const all = [];
       items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note })));
+      (checkins || []).forEach((c, i) => {
+        if (c.body != null || c.mind != null || c.social != null) {
+          const note = [`body:${c.body}`, `mind:${c.mind}`, `social:${c.social}`].filter(s => !s.endsWith('null')).join(' ');
+          all.push({ id: -(i + 1), date: c.date, item: 'Check-in', note });
+        }
+      });
       all.sort((a, b) => b.id - a.id);
 
       const container = document.getElementById('activity-log');
@@ -521,7 +531,7 @@
         const btn = document.createElement('button');
         btn.className = 'al-more';
         btn.textContent = `Show more (${all.length - PAGE} remaining)`;
-        btn.onclick = () => renderActivityLog(items, PAGE + 20);
+        btn.onclick = () => renderActivityLog(items, checkins, PAGE + 20);
         container.appendChild(btn);
       }
     }
@@ -534,7 +544,7 @@
       items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
       const todayCheckin = checkins.find(c => c.date === today) || null;
       renderCheckinSection(items, todayCheckin);
-      renderActivityLog(items);
+      renderActivityLog(items, checkins);
     }).catch(err => {
       if (err.message === 'unauthorized') showLogin();
       else console.error(err);
