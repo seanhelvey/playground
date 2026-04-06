@@ -144,6 +144,7 @@
     .ci-msg { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #34d399; }
     .ci-msg.error { color: #f87171; }
     .ci-indicator { font-size: 0.85rem; color: #34d399; min-width: 1.5ch; margin-left: auto; }
+    .ci-indicator.error { color: #f87171; }
 
     /* ── Tracker table ── */
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
@@ -301,8 +302,13 @@
         body: JSON.stringify({ note })
       });
       if (ind) {
-        ind.textContent = res.ok ? '✓' : '✗';
-        setTimeout(() => { ind.textContent = ''; }, 1500);
+        if (res.ok) {
+          ind.textContent = '✓'; ind.classList.remove('error');
+        } else {
+          ind.textContent = '✗'; ind.classList.add('error');
+          res.text().then(t => console.error(`save failed [${res.status}] ${name}: ${t}`));
+        }
+        setTimeout(() => { ind.textContent = ''; ind.classList.remove('error'); }, 1500);
       }
     }
 
