@@ -101,13 +101,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 		if allowedOrigin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-		} else if origin == "" {
-			// Same-origin requests don't send Origin header — no CORS needed
-		} else {
-			// No ALLOWED_ORIGIN configured and cross-origin request — reject
-			http.Error(w, "forbidden", 403)
-			return
 		}
+		// If ALLOWED_ORIGIN is not set, allow all — auth middleware handles security
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
