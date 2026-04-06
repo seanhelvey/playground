@@ -7,7 +7,9 @@ A personal flywheel for habits, dreams, goals, and projects. Go API + SQLite + P
 - Exception: Claude Code web sessions create a feature branch via the session harness. In that case, use the assigned branch but merge to `main` at end of session — don't leave fixes sitting on unmerged branches.
 
 ## Working with Claude
-- **Discuss before changing.** Talk through the approach first. Don't start writing code until the user agrees on the plan.
+- **Discuss before changing.** Talk through the approach first. Don't start writing code until the user agrees on the plan. No exceptions.
+- **Write a test before claiming something is fixed.** Every bug fix needs a lightweight integration test that proves it works. If you can't write a test, say so — don't claim it's fixed.
+- **Say "I don't know" instead of guessing.** If the root cause isn't proven, say so. Don't state confident answers without evidence.
 - **Track work in GitHub Issues.** Every bug or feature should have an issue. Reference it in commits.
 - **Don't make unrequested changes.** Fix what was asked, nothing more.
 
