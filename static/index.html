@@ -304,11 +304,12 @@
       if (ind) {
         if (res.ok) {
           ind.textContent = '✓'; ind.classList.remove('error');
+          setTimeout(() => { ind.textContent = ''; ind.classList.remove('error'); }, 1500);
         } else {
-          ind.textContent = '✗'; ind.classList.add('error');
-          res.text().then(t => console.error(`save failed [${res.status}] ${name}: ${t}`));
+          res.text().then(t => {
+            ind.textContent = `✗ ${res.status} ${t}`.trim(); ind.classList.add('error');
+          });
         }
-        setTimeout(() => { ind.textContent = ''; ind.classList.remove('error'); }, 1500);
       }
     }
 
