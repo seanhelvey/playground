@@ -462,6 +462,9 @@
         if (res.ok) {
           ind.textContent = '✓'; ind.classList.remove('error');
           setTimeout(() => { ind.textContent = ''; ind.classList.remove('error'); }, 1500);
+          fetch('/api/checkins').then(r => r.ok ? r.json() : []).then(checkins => {
+            renderActivityLog(window._items || [], checkins);
+          });
         } else {
           res.text().then(t => { ind.textContent = `✗ ${res.status} ${t}`.trim(); ind.classList.add('error'); });
         }
@@ -542,6 +545,7 @@
       fetch('/api/checkins').then(r => r.ok ? r.json() : [])
     ]).then(([items, checkins]) => {
       items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
+      window._items = items;
       const todayCheckin = checkins.find(c => c.date === today) || null;
       renderCheckinSection(items, todayCheckin);
       renderActivityLog(items, checkins);

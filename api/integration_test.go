@@ -167,7 +167,8 @@ func TestCounterPersistedOnReload(t *testing.T) {
 }
 
 // TestSlidersPersistedOnReload proves that body/mind/social values saved via
-// POST /api/checkins are returned by GET /api/checkins for today.
+// POST /api/checkins are returned by GET /api/checkins for today, and would
+// appear in the activity log data (same data used to render Recent Activity).
 func TestSlidersPersistedOnReload(t *testing.T) {
 	srv, cookie := newTestServer(t)
 	today := time.Now().Format("2006-01-02")
@@ -189,10 +190,14 @@ func TestSlidersPersistedOnReload(t *testing.T) {
 		}
 	}
 	if todayCI == nil {
-		t.Fatal("no check-in for today — sliders would reset to 5 after reload")
+		t.Fatal("no check-in for today — sliders would reset to 5 after reload and not appear in activity log")
 	}
 	if *todayCI.Body != 8 || *todayCI.Mind != 7 || *todayCI.Social != 6 {
 		t.Fatalf("expected 8/7/6, got %v/%v/%v", *todayCI.Body, *todayCI.Mind, *todayCI.Social)
+	}
+	// Verify it has an ID so it sorts correctly in the activity log
+	if todayCI.ID == 0 {
+		t.Fatal("check-in has no ID — would not sort correctly in activity log")
 	}
 }
 
