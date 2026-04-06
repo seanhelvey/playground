@@ -182,3 +182,4 @@ Claude Code = dev tool only (no tokens in deployed app)
 - **Flywheel > features** — Every addition must make the daily loop better.
 - **Phone-first** — If it doesn't work on the phone, it doesn't work.
 - **Ship simple, improve always** — A working v1 beats a perfect plan.
+- **Diagnostic visibility** — Build so failures are visible through the interface itself. Errors, save confirmations, and system state should be readable on the phone without dev tools. Tuck it away if needed but keep it accessible — the flywheel can't self-improve if you can't see what's broken.
