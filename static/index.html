@@ -510,14 +510,20 @@
     function renderActivityLog(items, checkins, limit) {
       const PAGE = limit || 20;
       const all = [];
-      items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note })));
+      items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note, isCheckin: false })));
       (checkins || []).forEach(c => {
         if (c.body != null || c.mind != null || c.social != null) {
           const note = [`body:${c.body}`, `mind:${c.mind}`, `social:${c.social}`].filter(s => !s.endsWith('null')).join(' ');
-          all.push({ id: c.id, date: c.date, item: 'Check-in', note });
+          all.push({ id: c.id, date: c.date, item: 'Check-in', note, isCheckin: true });
         }
       });
-      all.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+      // Sort by date desc; within same date check-ins first (most recent save), then logs by id desc
+      all.sort((a, b) => {
+        const dateDiff = b.date.localeCompare(a.date);
+        if (dateDiff !== 0) return dateDiff;
+        if (a.isCheckin !== b.isCheckin) return a.isCheckin ? -1 : 1;
+        return b.id - a.id;
+      });
 
       const container = document.getElementById('activity-log');
       container.innerHTML = '';

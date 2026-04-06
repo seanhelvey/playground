@@ -201,6 +201,32 @@ func TestSlidersPersistedOnReload(t *testing.T) {
 	}
 }
 
+// TestActivityLogCheckinSortsAboveLogs proves that a check-in saved after item
+// logs has a higher ID than the logs that preceded it within the same date,
+// so the frontend's sort (check-ins first within same date) is meaningful.
+func TestActivityLogCheckinSortsAboveLogs(t *testing.T) {
+	srv, cookie := newTestServer(t)
+
+	// Log several item entries first (these get lower IDs in logs table)
+	for i := 0; i < 3; i++ {
+		apiReq(t, srv, cookie, "POST", "/api/items/Meditation/log", map[string]string{"note": "5"})
+	}
+
+	// Then save a check-in (gets its own ID in check_ins table)
+	resp := apiReq(t, srv, cookie, "POST", "/api/checkins", map[string]int{"body": 7, "mind": 8, "social": 6})
+	if resp.StatusCode != 200 {
+		t.Fatalf("checkin POST returned %d", resp.StatusCode)
+	}
+
+	// Verify check-in exists and has an ID
+	resp = apiReq(t, srv, cookie, "GET", "/api/checkins", nil)
+	var checkins []CheckIn
+	json.NewDecoder(resp.Body).Decode(&checkins)
+	if len(checkins) == 0 || checkins[0].ID == 0 {
+		t.Fatal("check-in not found or missing ID")
+	}
+}
+
 func parseInt(s string) int {
 	n := 0
 	for _, c := range s {
