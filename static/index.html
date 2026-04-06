@@ -508,13 +508,13 @@
       const PAGE = limit || 20;
       const all = [];
       items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note })));
-      (checkins || []).forEach((c, i) => {
+      (checkins || []).forEach(c => {
         if (c.body != null || c.mind != null || c.social != null) {
           const note = [`body:${c.body}`, `mind:${c.mind}`, `social:${c.social}`].filter(s => !s.endsWith('null')).join(' ');
-          all.push({ id: -(i + 1), date: c.date, item: 'Check-in', note });
+          all.push({ id: c.id, date: c.date, item: 'Check-in', note });
         }
       });
-      all.sort((a, b) => b.id - a.id);
+      all.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
 
       const container = document.getElementById('activity-log');
       container.innerHTML = '';

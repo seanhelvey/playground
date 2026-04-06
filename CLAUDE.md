@@ -4,6 +4,7 @@ A personal flywheel for habits, dreams, goals, and projects. Go API + SQLite + P
 
 ## Git
 - Push directly to `main`, no branches.
+- Exception: Claude Code web sessions create a feature branch via the session harness. In that case, use the assigned branch but merge to `main` at end of session — don't leave fixes sitting on unmerged branches.
 
 ## Working with Claude
 - **Discuss before changing.** Talk through the approach first. Don't start writing code until the user agrees on the plan.
