@@ -8,7 +8,7 @@ A personal flywheel for habits, dreams, goals, and projects. Go API + SQLite + P
 
 ## Working with Claude
 - **Discuss before changing.** Talk through the approach first. Don't start writing code until the user agrees on the plan. No exceptions.
-- **Prove fixes with a minimal test.** One focused integration test per fix — just enough to prove the thing works end-to-end. Not a test suite, not exhaustive coverage. If you can't write one, say so.
+- **Maintain a small integration test suite.** A handful of high-level tests covering the critical paths. Not one per fix — use judgement. New tests only when an existing one doesn't cover it. Keep them passing.
 - **Say "I don't know" instead of guessing.** If the root cause isn't proven, say so. Don't state confident answers without evidence.
 - **Track work in GitHub Issues.** Every bug or feature should have an issue. Reference it in commits.
 - **Don't make unrequested changes.** Fix what was asked, nothing more.
