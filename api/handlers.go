@@ -24,7 +24,13 @@ type Item struct {
 	Cadence         string      `json:"cadence"`
 	StepSize        int         `json:"step_size"`
 	StepUnit        string      `json:"step_unit"`
+	RangeMin        int         `json:"range_min"`
+	RangeMax        int         `json:"range_max"`
+	TargetValue     *int        `json:"target_value,omitempty"`
+	TargetPeriod    *string     `json:"target_period,omitempty"`
+	Tags            *string     `json:"tags,omitempty"`
 	DisplayOrder    int         `json:"display_order"`
+	Children        []string    `json:"children"`
 	Milestones      []Milestone `json:"milestones"`
 	Log             []LogEntry  `json:"log"`
 }
@@ -45,7 +51,7 @@ type Milestone struct {
 }
 
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit, display_order FROM items WHERE active = 1 ORDER BY display_order, name")
+	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, tags, display_order FROM items WHERE active = 1 ORDER BY display_order, name")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
@@ -56,7 +62,17 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 	items := []Item{}
 	for rows.Next() {
 		var it Item
-		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit, &it.DisplayOrder)
+		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.Tags, &it.DisplayOrder)
+
+		it.Children = []string{}
+		if cRows, err := db.Query("SELECT child_name FROM item_relationships WHERE parent_name = ?", it.Name); err == nil {
+			for cRows.Next() {
+				var child string
+				cRows.Scan(&child)
+				it.Children = append(it.Children, child)
+			}
+			cRows.Close()
+		}
 
 		it.Log = []LogEntry{}
 		if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", it.Name); err == nil {
@@ -81,6 +97,64 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 		items = append(items, it)
 	}
 	writeJSON(w, items)
+}
+
+func handleCreateItem(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name         string  `json:"name"`
+		InputType    string  `json:"input_type"`
+		Cadence      string  `json:"cadence"`
+		StepSize     int     `json:"step_size"`
+		StepUnit     string  `json:"step_unit"`
+		RangeMin     int     `json:"range_min"`
+		RangeMax     int     `json:"range_max"`
+		TargetValue  *int    `json:"target_value"`
+		TargetPeriod *string `json:"target_period"`
+		Tags         *string `json:"tags"`
+		ParentName   *string `json:"parent_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
+		http.Error(w, "bad request", 400)
+		return
+	}
+	if req.InputType == "" {
+		req.InputType = "goal"
+	}
+	if req.Cadence == "" {
+		req.Cadence = "daily"
+	}
+	if req.RangeMin == 0 && req.RangeMax == 0 {
+		req.RangeMin = 1
+		req.RangeMax = 10
+	}
+	today := time.Now().Format("2006-01-02")
+	_, err := db.Exec(
+		`INSERT INTO items (name, momentum, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, tags, active, display_order)
+		 VALUES (?, 'dormant', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 99)`,
+		req.Name, today, req.InputType, req.Cadence, req.StepSize, req.StepUnit,
+		req.RangeMin, req.RangeMax, req.TargetValue, req.TargetPeriod, req.Tags,
+	)
+	if err != nil {
+		http.Error(w, "item already exists or db error", 400)
+		return
+	}
+	if req.ParentName != nil && *req.ParentName != "" {
+		db.Exec("INSERT OR IGNORE INTO item_relationships (parent_name, child_name) VALUES (?, ?)", *req.ParentName, req.Name)
+	}
+	writeJSON(w, map[string]string{"status": "created"})
+}
+
+func handleAddRelationship(w http.ResponseWriter, r *http.Request) {
+	parent := r.PathValue("name")
+	var req struct {
+		ChildName string `json:"child_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ChildName == "" {
+		http.Error(w, "bad request", 400)
+		return
+	}
+	db.Exec("INSERT OR IGNORE INTO item_relationships (parent_name, child_name) VALUES (?, ?)", parent, req.ChildName)
+	writeJSON(w, map[string]string{"status": "linked"})
 }
 
 func handleGetItem(w http.ResponseWriter, r *http.Request) {

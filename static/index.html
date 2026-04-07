@@ -104,6 +104,20 @@
     .ci-counter-btn:active { background: #2a2d3a; }
     .ci-counter-val { min-width: 3ch; text-align: center; font-weight: 600; font-size: 0.95rem; color: #34d399; }
 
+    /* Slider items */
+    .ci-slider { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; min-width: 140px; }
+    .ci-slider-input { flex: 1; accent-color: #a78bfa; }
+    .ci-slider-val { min-width: 2ch; text-align: center; font-weight: 600; font-size: 0.95rem; color: #a78bfa; }
+
+    /* Goal group headers */
+    .ci-group { margin-bottom: 0.25rem; }
+    .ci-group-header {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #a78bfa; padding: 0.6rem 0 0.2rem;
+      border-top: 1px solid #2a2d3a; margin-top: 0.25rem;
+    }
+    .ci-group .ci-row { padding-left: 0.5rem; }
+
     /* Note items — always visible input */
     .ci-note-inline {
       width: 100%; padding: 7px 10px; background: #0f1117;
@@ -324,84 +338,137 @@
 
     function renderCheckinSection(items, todayCheckin) {
       const section = document.getElementById('checkin-section');
-      let html = '';
+      const byName = Object.fromEntries(items.map(it => [it.name, it]));
+      const childSet = new Set(items.flatMap(it => it.children || []));
 
-      const dailyItems = items.filter(i => i.name !== 'Stick with the process' && i.type !== 'Goal');
-      const goalItems  = items.filter(i => i.name !== 'Stick with the process' && i.type === 'Goal');
+      function slug(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
 
-      dailyItems.forEach((it, i) => {
+      function renderItem(it) {
+        const s = slug(it.name);
         if (it.input_type === 'counter') {
           const total = todayTotal(it);
           const label = fmtCount(total, it.step_unit);
-          html += `<div class="ci-row" id="ci-row-${i}">
+          return `<div class="ci-row" id="ci-row-${s}">
             <span class="ci-name">${it.name}</span>
-            <span class="ci-indicator" id="ci-ind-${i}"></span>
+            <span class="ci-indicator" id="ci-ind-${s}"></span>
             <div class="ci-counter">
-              <button class="ci-counter-btn" data-item="${it.name}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-idx="${i}">−</button>
-              <span class="ci-counter-val" id="ci-val-${i}" data-raw="${total}">${label}</span>
-              <button class="ci-counter-btn" data-item="${it.name}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-idx="${i}">+</button>
+              <button class="ci-counter-btn" data-item="${it.name}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">−</button>
+              <span class="ci-counter-val" id="ci-val-${s}" data-raw="${total}">${label}</span>
+              <button class="ci-counter-btn" data-item="${it.name}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">+</button>
+            </div>
+          </div>`;
+        } else if (it.input_type === 'slider') {
+          const todayLogs = (it.log || []).filter(e => e.date === today);
+          const val = todayLogs.length ? (parseInt(todayLogs[0].note) || it.range_min) : Math.round((it.range_min + it.range_max) / 2);
+          return `<div class="ci-row" id="ci-row-${s}">
+            <span class="ci-name">${it.name}</span>
+            <span class="ci-indicator" id="ci-ind-${s}"></span>
+            <div class="ci-slider">
+              <input type="range" class="ci-slider-input" min="${it.range_min}" max="${it.range_max}" value="${val}" data-item="${it.name}" data-slug="${s}">
+              <span class="ci-slider-val" id="ci-slval-${s}">${val}</span>
             </div>
           </div>`;
         } else {
           const todayLogs = (it.log || []).filter(e => e.date === today);
-          const lastNote = todayLogs.length ? todayLogs[0].note : '';
-          const doneToday = lastNote === 'Done';
-          html += `<div class="ci-row" id="ci-row-${i}">
-            <button class="ci-toggle${doneToday ? ' on' : ''}" data-item="${it.name}" data-idx="${i}"></button>
+          const doneToday = todayLogs.length && todayLogs[0].note === 'Done';
+          return `<div class="ci-row" id="ci-row-${s}">
+            <button class="ci-toggle${doneToday ? ' on' : ''}" data-item="${it.name}" data-slug="${s}"></button>
             <span class="ci-name">${it.name}</span>
-            <span class="ci-indicator" id="ci-ind-${i}"></span>
+            <span class="ci-indicator" id="ci-ind-${s}"></span>
           </div>`;
+        }
+      }
+
+      let html = '';
+      const topLevel = items.filter(i => i.name !== 'Stick with the process' && !childSet.has(i.name));
+
+      topLevel.forEach(it => {
+        if (it.input_type === 'goal') {
+          html += `<div class="ci-group"><div class="ci-group-header">${it.name}</div>`;
+          (it.children || []).forEach(childName => {
+            const child = byName[childName];
+            if (child) html += renderItem(child);
+          });
+          html += `</div>`;
+        } else {
+          html += renderItem(it);
         }
       });
 
-
-      // Body / Mind / Social — always visible, auto-save on release
-      const bodyVal   = (todayCheckin && todayCheckin.body   != null) ? todayCheckin.body   : 5;
-      const mindVal   = (todayCheckin && todayCheckin.mind   != null) ? todayCheckin.mind   : 5;
-      const socialVal = (todayCheckin && todayCheckin.social != null) ? todayCheckin.social : 5;
-      html += `<div class="ci-extra open" id="reflect-section" style="border-top:1px solid #2a2d3a;margin-top:0.75rem;padding-top:0.75rem">
+      // Add item form
+      const parentOptions = items.filter(i => i.input_type === 'goal')
+        .map(i => `<option value="${i.name}">${i.name}</option>`).join('');
+      html += `<div class="ci-extra" id="add-item-section" style="margin-top:0.75rem">
         <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
-          <span class="ci-extra-title" style="color:#a78bfa">Body / Mind / Social</span>
-          <span class="ci-indicator" id="ci-ind-reflect"></span>
+          <span class="ci-extra-title" style="color:#555b66;font-size:0.85rem">+ Add item</span>
         </div>
-        <div class="ci-extra-body">
-          <label class="form-label">Body</label>
-          <div class="form-range-row"><input type="range" id="ci-body" class="form-range" min="1" max="10" value="${bodyVal}"><span class="form-range-val">${bodyVal}</span></div>
-          <label class="form-label">Mind</label>
-          <div class="form-range-row"><input type="range" id="ci-mind" class="form-range" min="1" max="10" value="${mindVal}"><span class="form-range-val">${mindVal}</span></div>
-          <label class="form-label">Social</label>
-          <div class="form-range-row"><input type="range" id="ci-social" class="form-range" min="1" max="10" value="${socialVal}"><span class="form-range-val">${socialVal}</span></div>
+        <div class="ci-extra-body" style="padding-top:0.75rem">
+          <input class="form-input" id="new-item-name" placeholder="Name" style="margin-bottom:0.5rem">
+          <select class="form-input" id="new-item-type" style="margin-bottom:0.5rem;background:#0f1117">
+            <option value="boolean">Toggle (boolean)</option>
+            <option value="counter">Counter (+/−)</option>
+            <option value="slider">Slider (range)</option>
+            <option value="goal">Goal / Intention (no widget)</option>
+          </select>
+          <select class="form-input" id="new-item-cadence" style="margin-bottom:0.5rem;background:#0f1117">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="ongoing">Ongoing</option>
+          </select>
+          <div id="new-item-counter-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
+            <input class="form-input" id="new-item-step" type="number" placeholder="Step size" style="width:49%;display:inline-block">
+            <input class="form-input" id="new-item-unit" placeholder="Unit (min, species…)" style="width:49%;display:inline-block">
+          </div>
+          <div id="new-item-slider-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
+            <input class="form-input" id="new-item-rmin" type="number" placeholder="Min" value="1" style="width:30%;display:inline-block">
+            <input class="form-input" id="new-item-rmax" type="number" placeholder="Max" value="10" style="width:30%;display:inline-block">
+          </div>
+          ${parentOptions ? `<select class="form-input" id="new-item-parent" style="margin-bottom:0.5rem;background:#0f1117"><option value="">No parent</option>${parentOptions}</select>` : ''}
+          <button class="ci-submit" id="new-item-submit">Add item</button>
+          <div class="ci-msg" id="new-item-msg"></div>
         </div>
       </div>`;
 
-      // Goals section
-      if (goalItems.length) {
-        html += `<div style="border-top:1px solid #2a2d3a;margin-top:0.75rem;padding-top:0.75rem">
-          <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#c4cbd5;margin-bottom:0.6rem">Goals</div>`;
-        goalItems.forEach((it, gi) => {
-          const mom = it.momentum;
-          const momColor = { rising: '#34d399', steady: '#60a5fa', stalling: '#fbbf24', dormant: '#555b66' }[mom] || '#555b66';
-          const lastLog = (it.log || [])[0];
-          const lastNote = lastLog ? `<span style="font-size:0.82rem;color:#555b66;flex-basis:100%">${fmtDate(lastLog.date)}: ${lastLog.note}</span>` : '';
-          html += `<div class="ci-row" style="flex-wrap:wrap;gap:0.3rem 0.75rem">
-            <span class="ci-name">${it.name}</span>
-            <span style="font-size:0.72rem;color:${momColor};margin-left:auto">${mom}</span>
-            ${lastNote}
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
       section.innerHTML = html;
 
-      // Wire toggles — tap-on logs "Done", tap-off logs "Undone"
+      // Wire type select → show/hide extra fields
+      const typeSelect = document.getElementById('new-item-type');
+      typeSelect.onchange = () => {
+        document.getElementById('new-item-counter-opts').style.display = typeSelect.value === 'counter' ? 'flex' : 'none';
+        document.getElementById('new-item-slider-opts').style.display = typeSelect.value === 'slider' ? 'flex' : 'none';
+      };
+
+      document.getElementById('new-item-submit').onclick = async () => {
+        const name = document.getElementById('new-item-name').value.trim();
+        if (!name) return;
+        const body = {
+          name,
+          input_type: typeSelect.value,
+          cadence: document.getElementById('new-item-cadence').value,
+          step_size: parseInt(document.getElementById('new-item-step')?.value) || 0,
+          step_unit: document.getElementById('new-item-unit')?.value || '',
+          range_min: parseInt(document.getElementById('new-item-rmin')?.value) || 1,
+          range_max: parseInt(document.getElementById('new-item-rmax')?.value) || 10,
+          parent_name: document.getElementById('new-item-parent')?.value || null,
+        };
+        const res = await fetch('/api/items', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const msg = document.getElementById('new-item-msg');
+        if (res.ok) {
+          msg.textContent = '✓ Added — reloading…'; msg.classList.remove('error');
+          setTimeout(() => location.reload(), 800);
+        } else {
+          msg.textContent = '✗ Failed'; msg.classList.add('error');
+        }
+      };
+
+      // Wire toggles
       document.querySelectorAll('.ci-toggle').forEach(toggle => {
         toggle.onclick = async () => {
           const isOn = toggle.classList.contains('on');
           toggle.classList.toggle('on');
-          const name = toggle.dataset.item;
-          const ind = document.getElementById(`ci-ind-${toggle.dataset.idx}`);
-          await autoSaveLog(name, isOn ? 'Undone' : 'Done', ind);
+          const ind = document.getElementById(`ci-ind-${toggle.dataset.slug}`);
+          await autoSaveLog(toggle.dataset.item, isOn ? 'Undone' : 'Done', ind);
         };
       });
 
@@ -409,68 +476,32 @@
       document.querySelectorAll('.ci-counter-btn').forEach(btn => {
         btn.onclick = async () => {
           const step = parseInt(btn.dataset.step);
-          const idx = btn.dataset.idx;
-          const valEl = document.getElementById(`ci-val-${idx}`);
-          const ind = document.getElementById(`ci-ind-${idx}`);
+          const s = btn.dataset.slug;
+          const valEl = document.getElementById(`ci-val-${s}`);
+          const ind = document.getElementById(`ci-ind-${s}`);
           const curRaw = parseInt(valEl.dataset.raw || '0');
           const next = Math.max(0, curRaw + step);
-          if (next === curRaw && step < 0) return; // already at 0
+          if (next === curRaw && step < 0) return;
           valEl.dataset.raw = next;
           valEl.textContent = fmtCount(next, btn.dataset.unit);
           await autoSaveLog(btn.dataset.item, String(step), ind);
         };
       });
 
-      // Set raw counter values from rendered totals
-      document.querySelectorAll('.ci-counter-val').forEach((el, i) => {
-        const raw = parseInt(el.textContent) || 0;
-        el.dataset.raw = raw;
-      });
-
-      // Wire note inputs — save on blur
-      document.querySelectorAll('.ci-note-input').forEach(input => {
-        input.onblur = async () => {
-          const note = input.value.trim();
-          if (!note) return;
-          const ind = document.getElementById(input.dataset.ind);
-          await autoSaveLog(input.dataset.item, note, ind);
-          input.value = '';
+      // Wire sliders — save on release
+      const sliderTimers = {};
+      document.querySelectorAll('.ci-slider-input').forEach(input => {
+        const s = input.dataset.slug;
+        const valEl = document.getElementById(`ci-slval-${s}`);
+        input.oninput = () => { if (valEl) valEl.textContent = input.value; };
+        input.onchange = () => {
+          clearTimeout(sliderTimers[s]);
+          sliderTimers[s] = setTimeout(() => {
+            const ind = document.getElementById(`ci-ind-${s}`);
+            autoSaveLog(input.dataset.item, input.value, ind);
+          }, 600);
         };
       });
-
-
-      // Wire sliders — update display on drag, save on release
-      let reflectTimer = null;
-      document.querySelectorAll('.form-range').forEach(r => {
-        r.oninput = () => r.parentElement.querySelector('.form-range-val').textContent = r.value;
-        r.onchange = () => {
-          clearTimeout(reflectTimer);
-          reflectTimer = setTimeout(saveReflection, 600);
-        };
-      });
-    }
-
-    async function saveReflection() {
-      const ind = document.getElementById('ci-ind-reflect');
-      const data = {
-        body: parseInt(document.getElementById('ci-body').value),
-        mind: parseInt(document.getElementById('ci-mind').value),
-        social: parseInt(document.getElementById('ci-social').value),
-        date: today
-      };
-      if (ind) ind.textContent = '·';
-      const res = await fetch('/api/checkins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-      if (ind) {
-        if (res.ok) {
-          ind.textContent = '✓'; ind.classList.remove('error');
-          setTimeout(() => { ind.textContent = ''; ind.classList.remove('error'); }, 1500);
-          fetch('/api/checkins').then(r => r.ok ? r.json() : []).then(checkins => {
-            renderActivityLog(window._items || [], checkins);
-          });
-        } else {
-          res.text().then(t => { ind.textContent = `✗ ${res.status} ${t}`.trim(); ind.classList.add('error'); });
-        }
-      }
     }
 
     /* ── Tracker rows ── */
