@@ -151,15 +151,19 @@ func handleAddLog(w http.ResponseWriter, r *http.Request) {
 	var entry struct {
 		Note string  `json:"note"`
 		Type *string `json:"type,omitempty"`
+		Date string  `json:"date"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
 		http.Error(w, "bad request", 400)
 		return
 	}
 
-	today := time.Now().Format("2006-01-02")
-	db.Exec("INSERT INTO logs (item_name, date, type, note) VALUES (?, ?, ?, ?)", name, today, entry.Type, entry.Note)
-	db.Exec("UPDATE items SET last_updated = ? WHERE name = ?", today, name)
+	date := entry.Date
+	if len(date) != 10 || date[4] != '-' || date[7] != '-' {
+		date = time.Now().Format("2006-01-02")
+	}
+	db.Exec("INSERT INTO logs (item_name, date, type, note) VALUES (?, ?, ?, ?)", name, date, entry.Type, entry.Note)
+	db.Exec("UPDATE items SET last_updated = ? WHERE name = ?", date, name)
 	writeJSON(w, map[string]string{"status": "logged"})
 }
 
@@ -194,7 +198,9 @@ func handleAddCheckin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", 400)
 		return
 	}
-	c.Date = time.Now().Format("2006-01-02")
+	if len(c.Date) != 10 || c.Date[4] != '-' || c.Date[7] != '-' {
+		c.Date = time.Now().Format("2006-01-02")
+	}
 	db.Exec("INSERT INTO check_ins (date, body, mind, social, feeling, more_of, less_of) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		c.Date, c.Body, c.Mind, c.Social, c.Feeling, c.MoreOf, c.LessOf)
 	writeJSON(w, map[string]string{"status": "saved"})

@@ -293,13 +293,14 @@
     }
 
     /* ── Check-in section ── */
-    const today = new Date().toISOString().slice(0, 10);
+    const _d = new Date();
+    const today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
 
     async function autoSaveLog(name, note, ind) {
       if (ind) ind.textContent = '·';
       const res = await fetch(`/api/items/${encodeURIComponent(name)}/log`, {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ note })
+        body: JSON.stringify({ note, date: today })
       });
       if (ind) {
         if (res.ok) {
@@ -454,7 +455,8 @@
       const data = {
         body: parseInt(document.getElementById('ci-body').value),
         mind: parseInt(document.getElementById('ci-mind').value),
-        social: parseInt(document.getElementById('ci-social').value)
+        social: parseInt(document.getElementById('ci-social').value),
+        date: today
       };
       if (ind) ind.textContent = '·';
       const res = await fetch('/api/checkins', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
