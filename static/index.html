@@ -226,8 +226,6 @@
 
     function renderCheckinSection(items, todayCheckin) {
       const section = document.getElementById('checkin-section');
-      const byName = Object.fromEntries(items.map(it => [it.name, it]));
-      const childSet = new Set(items.flatMap(it => it.children || []));
 
       function slug(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
 
@@ -268,24 +266,9 @@
       }
 
       let html = '';
-      const topLevel = items.filter(i => i.name !== 'Stick with the process' && !childSet.has(i.name));
-
-      topLevel.forEach(it => {
-        if (it.input_type === 'goal') {
-          html += `<div class="ci-group"><div class="ci-group-header">${it.name}</div>`;
-          (it.children || []).forEach(childName => {
-            const child = byName[childName];
-            if (child) html += renderItem(child);
-          });
-          html += `</div>`;
-        } else {
-          html += renderItem(it);
-        }
-      });
+      items.forEach(it => { html += renderItem(it); });
 
       // Add item form
-      const parentOptions = items.filter(i => i.input_type === 'goal')
-        .map(i => `<option value="${i.name}">${i.name}</option>`).join('');
       html += `<div class="ci-extra" id="add-item-section" style="margin-top:0.75rem">
         <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
           <span class="ci-extra-title" style="color:#555b66;font-size:0.85rem">+ Add item</span>
@@ -293,10 +276,9 @@
         <div class="ci-extra-body" style="padding-top:0.75rem">
           <input class="form-input" id="new-item-name" placeholder="Name" style="margin-bottom:0.5rem">
           <select class="form-input" id="new-item-type" style="margin-bottom:0.5rem;background:#0f1117">
-            <option value="boolean">Toggle (boolean)</option>
+            <option value="boolean">Toggle (yes/no)</option>
             <option value="counter">Counter (+/−)</option>
             <option value="slider">Slider (range)</option>
-            <option value="goal">Goal / Intention (no widget)</option>
           </select>
           <select class="form-input" id="new-item-cadence" style="margin-bottom:0.5rem;background:#0f1117">
             <option value="daily">Daily</option>
@@ -312,7 +294,6 @@
             <input class="form-input" id="new-item-rmin" type="number" placeholder="Min" value="1" style="width:30%;display:inline-block">
             <input class="form-input" id="new-item-rmax" type="number" placeholder="Max" value="10" style="width:30%;display:inline-block">
           </div>
-          ${parentOptions ? `<select class="form-input" id="new-item-parent" style="margin-bottom:0.5rem;background:#0f1117"><option value="">No parent</option>${parentOptions}</select>` : ''}
           <button class="ci-submit" id="new-item-submit">Add item</button>
           <div class="ci-msg" id="new-item-msg"></div>
         </div>
@@ -338,7 +319,6 @@
           step_unit: document.getElementById('new-item-unit')?.value || '',
           range_min: parseInt(document.getElementById('new-item-rmin')?.value) || 1,
           range_max: parseInt(document.getElementById('new-item-rmax')?.value) || 10,
-          parent_name: document.getElementById('new-item-parent')?.value || null,
         };
         const res = await fetch('/api/items', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
         const msg = document.getElementById('new-item-msg');

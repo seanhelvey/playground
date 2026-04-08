@@ -11,27 +11,18 @@ import (
 // Items
 
 type Item struct {
-	Name            string      `json:"name"`
-	Type            string      `json:"type"`
-	Momentum        string      `json:"momentum"`
-	Focus           *string     `json:"focus"`
-	Next            *string     `json:"next"`
-	URL             *string     `json:"url,omitempty"`
-	TargetDate      *string     `json:"target_date,omitempty"`
-	SuccessCriteria *string     `json:"success_criteria,omitempty"`
-	LastUpdated     string      `json:"last_updated"`
-	InputType       string      `json:"input_type"`
-	Cadence         string      `json:"cadence"`
-	StepSize        int         `json:"step_size"`
-	StepUnit        string      `json:"step_unit"`
-	RangeMin        int         `json:"range_min"`
-	RangeMax        int         `json:"range_max"`
-	TargetValue     *int        `json:"target_value,omitempty"`
-	TargetPeriod    *string     `json:"target_period,omitempty"`
-	DisplayOrder    int         `json:"display_order"`
-	Children        []string    `json:"children"`
-	Milestones      []Milestone `json:"milestones"`
-	Log             []LogEntry  `json:"log"`
+	Name          string     `json:"name"`
+	LastUpdated   string     `json:"last_updated"`
+	InputType     string     `json:"input_type"`
+	StepSize      int        `json:"step_size"`
+	StepUnit      string     `json:"step_unit"`
+	RangeMin      int        `json:"range_min"`
+	RangeMax      int        `json:"range_max"`
+	TargetValue   *int       `json:"target_value,omitempty"`
+	TargetPeriod  *string    `json:"target_period,omitempty"`
+	DisplayOrder  int        `json:"display_order"`
+	CompletedDate *string    `json:"completed_date,omitempty"`
+	Log           []LogEntry `json:"log"`
 }
 
 type LogEntry struct {
@@ -42,15 +33,8 @@ type LogEntry struct {
 	Note     string  `json:"note"`
 }
 
-type Milestone struct {
-	ID       int    `json:"id"`
-	ItemName string `json:"item_name,omitempty"`
-	Date     string `json:"date"`
-	Label    string `json:"label"`
-}
-
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, display_order FROM items WHERE active = 1 ORDER BY display_order, name")
+	rows, err := db.Query("SELECT name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE active = 1 ORDER BY display_order, name")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
@@ -61,17 +45,7 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 	items := []Item{}
 	for rows.Next() {
 		var it Item
-		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder)
-
-		it.Children = []string{}
-		if cRows, err := db.Query("SELECT child_name FROM item_relationships WHERE parent_name = ?", it.Name); err == nil {
-			for cRows.Next() {
-				var child string
-				cRows.Scan(&child)
-				it.Children = append(it.Children, child)
-			}
-			cRows.Close()
-		}
+		rows.Scan(&it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
 
 		it.Log = []LogEntry{}
 		if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", it.Name); err == nil {
@@ -83,16 +57,6 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 			logRows.Close()
 		}
 
-		it.Milestones = []Milestone{}
-		if msRows, err := db.Query("SELECT id, date, label FROM milestones WHERE item_name = ? ORDER BY date DESC", it.Name); err == nil {
-			for msRows.Next() {
-				var m Milestone
-				msRows.Scan(&m.ID, &m.Date, &m.Label)
-				it.Milestones = append(it.Milestones, m)
-			}
-			msRows.Close()
-		}
-
 		items = append(items, it)
 	}
 	writeJSON(w, items)
@@ -102,24 +66,19 @@ func handleCreateItem(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name         string  `json:"name"`
 		InputType    string  `json:"input_type"`
-		Cadence      string  `json:"cadence"`
 		StepSize     int     `json:"step_size"`
 		StepUnit     string  `json:"step_unit"`
 		RangeMin     int     `json:"range_min"`
 		RangeMax     int     `json:"range_max"`
 		TargetValue  *int    `json:"target_value"`
 		TargetPeriod *string `json:"target_period"`
-		ParentName   *string `json:"parent_name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
 		http.Error(w, "bad request", 400)
 		return
 	}
 	if req.InputType == "" {
-		req.InputType = "goal"
-	}
-	if req.Cadence == "" {
-		req.Cadence = "daily"
+		req.InputType = "boolean"
 	}
 	if req.RangeMin == 0 && req.RangeMax == 0 {
 		req.RangeMin = 1
@@ -127,44 +86,27 @@ func handleCreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 	today := time.Now().Format("2006-01-02")
 	_, err := db.Exec(
-		`INSERT INTO items (name, momentum, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, active, display_order)
-		 VALUES (?, 'dormant', ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 99)`,
-		req.Name, today, req.InputType, req.Cadence, req.StepSize, req.StepUnit,
+		`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, active, display_order)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 99)`,
+		req.Name, today, req.InputType, req.StepSize, req.StepUnit,
 		req.RangeMin, req.RangeMax, req.TargetValue, req.TargetPeriod,
 	)
 	if err != nil {
 		http.Error(w, "item already exists or db error", 400)
 		return
 	}
-	if req.ParentName != nil && *req.ParentName != "" {
-		db.Exec("INSERT OR IGNORE INTO item_relationships (parent_name, child_name) VALUES (?, ?)", *req.ParentName, req.Name)
-	}
 	writeJSON(w, map[string]string{"status": "created"})
-}
-
-func handleAddRelationship(w http.ResponseWriter, r *http.Request) {
-	parent := r.PathValue("name")
-	var req struct {
-		ChildName string `json:"child_name"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ChildName == "" {
-		http.Error(w, "bad request", 400)
-		return
-	}
-	db.Exec("INSERT OR IGNORE INTO item_relationships (parent_name, child_name) VALUES (?, ?)", parent, req.ChildName)
-	writeJSON(w, map[string]string{"status": "linked"})
 }
 
 func handleGetItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	var it Item
-	err := db.QueryRow("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit FROM items WHERE name = ? AND active = 1", name).
-		Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit)
+	err := db.QueryRow("SELECT name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE name = ? AND active = 1", name).
+		Scan(&it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
 	}
-
 	it.Log = []LogEntry{}
 	if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", name); err == nil {
 		for logRows.Next() {
@@ -174,46 +116,37 @@ func handleGetItem(w http.ResponseWriter, r *http.Request) {
 		}
 		logRows.Close()
 	}
-
-	it.Milestones = []Milestone{}
-	if msRows, err := db.Query("SELECT id, date, label FROM milestones WHERE item_name = ? ORDER BY date DESC", name); err == nil {
-		for msRows.Next() {
-			var m Milestone
-			msRows.Scan(&m.ID, &m.Date, &m.Label)
-			it.Milestones = append(it.Milestones, m)
-		}
-		msRows.Close()
-	}
-
 	writeJSON(w, it)
 }
 
 func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	var update struct {
-		Momentum *string `json:"momentum"`
-		Focus    *string `json:"focus"`
-		Next     *string `json:"next"`
+		CompletedDate *string `json:"completed_date"`
+		Active        *int    `json:"active"`
+		TargetValue   *int    `json:"target_value"`
+		TargetPeriod  *string `json:"target_period"`
+		DisplayOrder  *int    `json:"display_order"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 		http.Error(w, "bad request", 400)
 		return
 	}
-
 	today := time.Now().Format("2006-01-02")
-	if update.Momentum != nil {
-		valid := map[string]bool{"rising": true, "steady": true, "stalling": true, "dormant": true}
-		if !valid[*update.Momentum] {
-			http.Error(w, "momentum must be rising, steady, stalling, or dormant", 400)
-			return
-		}
-		db.Exec("UPDATE items SET momentum = ?, last_updated = ? WHERE name = ?", *update.Momentum, today, name)
+	if update.CompletedDate != nil {
+		db.Exec("UPDATE items SET completed_date = ?, last_updated = ? WHERE name = ?", *update.CompletedDate, today, name)
 	}
-	if update.Focus != nil {
-		db.Exec("UPDATE items SET focus = ?, last_updated = ? WHERE name = ?", *update.Focus, today, name)
+	if update.Active != nil {
+		db.Exec("UPDATE items SET active = ?, last_updated = ? WHERE name = ?", *update.Active, today, name)
 	}
-	if update.Next != nil {
-		db.Exec("UPDATE items SET next = ?, last_updated = ? WHERE name = ?", *update.Next, today, name)
+	if update.TargetValue != nil {
+		db.Exec("UPDATE items SET target_value = ?, last_updated = ? WHERE name = ?", *update.TargetValue, today, name)
+	}
+	if update.TargetPeriod != nil {
+		db.Exec("UPDATE items SET target_period = ?, last_updated = ? WHERE name = ?", *update.TargetPeriod, today, name)
+	}
+	if update.DisplayOrder != nil {
+		db.Exec("UPDATE items SET display_order = ? WHERE name = ?", *update.DisplayOrder, name)
 	}
 	writeJSON(w, map[string]string{"status": "updated"})
 }
@@ -347,44 +280,3 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{"status": "deleted"})
 }
 
-// Engagement
-
-func handleEngagement(w http.ResponseWriter, r *http.Request) {
-	var totalItems, recentItems int
-	db.QueryRow("SELECT COUNT(*) FROM items").Scan(&totalItems)
-	db.QueryRow("SELECT COUNT(*) FROM items WHERE last_updated >= date('now', '-7 days')").Scan(&recentItems)
-
-	var totalGoals, onPaceGoals int
-	db.QueryRow("SELECT COUNT(*) FROM items WHERE type = 'Goal' AND target_date IS NOT NULL").Scan(&totalGoals)
-	db.QueryRow("SELECT COUNT(*) FROM items WHERE type = 'Goal' AND target_date IS NOT NULL AND momentum IN ('rising', 'steady')").Scan(&onPaceGoals)
-
-	var recentLogs int
-	db.QueryRow("SELECT COUNT(DISTINCT date) FROM logs WHERE date >= date('now', '-7 days')").Scan(&recentLogs)
-
-	updatePct := 0.0
-	if totalItems > 0 {
-		updatePct = float64(recentItems) / float64(totalItems)
-	}
-	goalPct := 1.0
-	if totalGoals > 0 {
-		goalPct = float64(onPaceGoals) / float64(totalGoals)
-	}
-
-	score := int((updatePct*0.6 + goalPct*0.4) * 100)
-	label := "slipping"
-	if score >= 70 {
-		label = "rising"
-	} else if score >= 40 {
-		label = "steady"
-	}
-
-	writeJSON(w, map[string]any{
-		"score":            score,
-		"label":            label,
-		"items_updated_7d": recentItems,
-		"items_total":      totalItems,
-		"goals_on_pace":    onPaceGoals,
-		"goals_total":      totalGoals,
-		"active_days_7d":   recentLogs,
-	})
-}

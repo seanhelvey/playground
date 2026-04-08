@@ -9,18 +9,17 @@ func migrate(db *sql.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS items (
 			name TEXT PRIMARY KEY,
-			type TEXT NOT NULL DEFAULT 'Habit',
-			momentum TEXT NOT NULL DEFAULT 'dormant',
-			focus TEXT,
-			next TEXT,
-			url TEXT,
-			target_date TEXT,
-			success_criteria TEXT,
 			last_updated TEXT NOT NULL,
 			input_type TEXT NOT NULL DEFAULT 'boolean',
-			cadence TEXT NOT NULL DEFAULT 'daily',
 			step_size INTEGER NOT NULL DEFAULT 0,
-			step_unit TEXT NOT NULL DEFAULT ''
+			step_unit TEXT NOT NULL DEFAULT '',
+			display_order INTEGER NOT NULL DEFAULT 99,
+			active INTEGER NOT NULL DEFAULT 1,
+			target_value INTEGER,
+			target_period TEXT,
+			range_min INTEGER NOT NULL DEFAULT 1,
+			range_max INTEGER NOT NULL DEFAULT 10,
+			completed_date TEXT
 		);
 
 		CREATE TABLE IF NOT EXISTS logs (
@@ -95,7 +94,6 @@ func migrate(db *sql.DB) error {
 func migrateAlter(db *sql.DB) error {
 	alters := []string{
 		"ALTER TABLE items ADD COLUMN input_type TEXT NOT NULL DEFAULT 'boolean'",
-		"ALTER TABLE items ADD COLUMN cadence TEXT NOT NULL DEFAULT 'daily'",
 		"ALTER TABLE items ADD COLUMN step_size INTEGER NOT NULL DEFAULT 0",
 		"ALTER TABLE items ADD COLUMN step_unit TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE items ADD COLUMN display_order INTEGER NOT NULL DEFAULT 99",
@@ -104,6 +102,7 @@ func migrateAlter(db *sql.DB) error {
 		"ALTER TABLE items ADD COLUMN target_period TEXT",
 		"ALTER TABLE items ADD COLUMN range_min INTEGER NOT NULL DEFAULT 1",
 		"ALTER TABLE items ADD COLUMN range_max INTEGER NOT NULL DEFAULT 10",
+		"ALTER TABLE items ADD COLUMN completed_date TEXT",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
@@ -111,74 +110,58 @@ func migrateAlter(db *sql.DB) error {
 		}
 	}
 
-	// item_relationships: m2m between items (e.g. habit → goal)
-	db.Exec(`CREATE TABLE IF NOT EXISTS item_relationships (
-		parent_name TEXT NOT NULL REFERENCES items(name),
-		child_name  TEXT NOT NULL REFERENCES items(name),
-		PRIMARY KEY (parent_name, child_name)
-	)`)
-
 	// Deactivate removed items
-	db.Exec("UPDATE items SET active = 0 WHERE name IN ('Coloft', 'Nature', 'Screen time')")
+	db.Exec("UPDATE items SET active = 0 WHERE name IN ('Coloft', 'Nature', 'Screen time', 'Live closer to nature', 'Stick with the process')")
+	// Mark completed items
+	db.Exec("UPDATE items SET completed_date = '2026-04-07' WHERE name = 'Deploy a full-stack project' AND completed_date IS NULL")
 
 	// Insert new items (idempotent)
 	type newItem struct {
-		name, inputType, cadence, stepUnit string
+		name, inputType, stepUnit string
 		stepSize, order, rangeMin, rangeMax int
-	}
-	inserts := []newItem{
-		{"No work after dinner", "boolean", "daily", "", 0, 5, 1, 10},
-		{"App time under target", "boolean", "daily", "", 0, 6, 1, 10},
-		{"Live closer to nature", "goal", "ongoing", "", 0, 7, 1, 10},
-		{"Plant ID", "counter", "daily", "species", 1, 8, 1, 10},
-		{"Gardening", "counter", "weekly", "min", 30, 9, 1, 10},
-		{"Fishing", "boolean", "weekly", "", 0, 10, 1, 10},
-		{"Body", "slider", "daily", "", 1, 17, 1, 10},
-		{"Mind", "slider", "daily", "", 1, 18, 1, 10},
-		{"Social", "slider", "daily", "", 1, 19, 1, 10},
+		targetValue                         int
+		targetPeriod                        string
 	}
 	today := "2026-04-07"
+	inserts := []newItem{
+		{"No work after dinner", "boolean", "", 0, 5, 1, 10, 1, "daily"},
+		{"App time under target", "boolean", "", 0, 6, 1, 10, 1, "daily"},
+		{"Plant ID", "counter", "species", 1, 8, 1, 10, 1, "daily"},
+		{"Gardening", "counter", "min", 30, 9, 1, 10, 120, "monthly"},
+		{"Fishing", "counter", "min", 30, 10, 1, 10, 120, "monthly"},
+		{"Body", "slider", "", 1, 17, 1, 10, 0, ""},
+		{"Mind", "slider", "", 1, 18, 1, 10, 0, ""},
+		{"Social", "slider", "", 1, 19, 1, 10, 0, ""},
+	}
 	for _, it := range inserts {
 		db.Exec(
-			`INSERT OR IGNORE INTO items (name, momentum, last_updated, input_type, cadence, step_size, step_unit, display_order, range_min, range_max, active)
-			 VALUES (?, 'dormant', ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-			it.name, today, it.inputType, it.cadence, it.stepSize, it.stepUnit, it.order, it.rangeMin, it.rangeMax,
+			`INSERT OR IGNORE INTO items (name, last_updated, input_type, step_size, step_unit, display_order, range_min, range_max, target_value, target_period, active)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+			it.name, today, it.inputType, it.stepSize, it.stepUnit, it.order, it.rangeMin, it.rangeMax, it.targetValue, it.targetPeriod,
 		)
 	}
 
 	// Update config for existing items
 	type itemConfig struct {
-		name, inputType, cadence, stepUnit string
-		stepSize, order                    int
+		name, inputType, stepUnit, targetPeriod string
+		stepSize, order, targetValue            int
 	}
 	updates := []itemConfig{
-		{"Wake to alarm", "boolean", "daily", "", 0, 1},
-		{"Meditation", "counter", "daily", "min", 5, 2},
-		{"DM a friend", "boolean", "daily", "", 0, 3},
-		{"Fast after dinner", "boolean", "daily", "", 0, 4},
-		{"Dancing", "counter", "weekly", "min", 15, 11},
-		{"Music", "counter", "weekly", "min", 15, 12},
-		{"Own a home", "goal", "monthly", "", 0, 13},
-		{"Build fallback income", "goal", "monthly", "", 0, 14},
-		{"Deploy a full-stack project", "goal", "ongoing", "", 0, 15},
-		{"Contribute to non-Django OSS", "goal", "ongoing", "", 0, 16},
-		{"Stick with the process", "boolean", "daily", "", 0, 99},
+		{"Wake to alarm", "boolean", "", "daily", 0, 1, 1},
+		{"Meditation", "counter", "min", "weekly", 5, 2, 35},
+		{"DM a friend", "boolean", "", "daily", 0, 3, 1},
+		{"Fast after dinner", "boolean", "", "daily", 0, 4, 1},
+		{"Dancing", "counter", "min", "weekly", 15, 11, 120},
+		{"Music", "counter", "min", "weekly", 15, 12, 120},
+		{"Own a home", "counter", "hr", "monthly", 1, 13, 2},
+		{"Build fallback income", "counter", "hr", "monthly", 1, 14, 2},
+		{"Contribute to non-Django OSS", "counter", "hr", "monthly", 1, 16, 2},
 	}
 	for _, u := range updates {
 		db.Exec(
-			"UPDATE items SET input_type=?, cadence=?, step_size=?, step_unit=?, display_order=? WHERE name=?",
-			u.inputType, u.cadence, u.stepSize, u.stepUnit, u.order, u.name,
+			"UPDATE items SET input_type=?, step_size=?, step_unit=?, display_order=?, target_value=?, target_period=? WHERE name=?",
+			u.inputType, u.stepSize, u.stepUnit, u.order, u.targetValue, u.targetPeriod, u.name,
 		)
-	}
-
-	// Relationships: nature habits → Live closer to nature
-	rels := [][2]string{
-		{"Live closer to nature", "Plant ID"},
-		{"Live closer to nature", "Gardening"},
-		{"Live closer to nature", "Fishing"},
-	}
-	for _, r := range rels {
-		db.Exec("INSERT OR IGNORE INTO item_relationships (parent_name, child_name) VALUES (?, ?)", r[0], r[1])
 	}
 
 	return nil

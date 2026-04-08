@@ -76,8 +76,8 @@ func seedFromJSON(db *sql.DB, path string) error {
 	defer tx.Rollback()
 
 	for _, item := range seed.Items {
-		tx.Exec("INSERT INTO items (name, type, momentum, focus, next, url, target_date, success_criteria, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-			item.Name, item.Type, item.Momentum, item.Focus, item.Next, item.URL, item.TargetDate, item.SuccessCriteria, item.LastUpdated)
+		tx.Exec("INSERT INTO items (name, last_updated) VALUES (?, ?)",
+			item.Name, item.LastUpdated)
 
 		for _, l := range item.Log {
 			tx.Exec("INSERT INTO logs (item_name, date, type, note) VALUES (?, ?, ?, ?)", item.Name, l.Date, l.Type, l.Note)

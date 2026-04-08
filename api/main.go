@@ -64,7 +64,6 @@ func main() {
 	api.HandleFunc("GET /api/items/{name}", handleGetItem)
 	api.HandleFunc("POST /api/items/{name}/log", handleAddLog)
 	api.HandleFunc("PATCH /api/items/{name}", handleUpdateItem)
-	api.HandleFunc("POST /api/items/{name}/children", handleAddRelationship)
 	api.HandleFunc("GET /api/checkins", handleGetCheckins)
 	api.HandleFunc("POST /api/checkins", handleAddCheckin)
 	api.HandleFunc("GET /api/wins", handleGetWins)
@@ -72,7 +71,6 @@ func main() {
 	api.HandleFunc("GET /api/tasks", handleGetTasks)
 	api.HandleFunc("POST /api/tasks", handleAddTask)
 	api.HandleFunc("DELETE /api/tasks/{id}", handleDeleteTask)
-	api.HandleFunc("GET /api/engagement", handleEngagement)
 	mux.Handle("/api/", authMiddleware(api))
 
 	// Serve static files (PWA) — no auth, the app shell loads for everyone

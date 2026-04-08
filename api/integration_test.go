@@ -25,10 +25,10 @@ func newTestServer(t *testing.T) (*httptest.Server, *http.Cookie) {
 
 	// Seed one item we can test against
 	today := time.Now().Format("2006-01-02")
-	db.Exec(`INSERT INTO items (name, type, momentum, last_updated, input_type, cadence, step_size, step_unit, display_order)
-		VALUES ('Wake to alarm', 'Core', 'steady', ?, 'boolean', 'daily', 0, '', 1)`, today)
-	db.Exec(`INSERT INTO items (name, type, momentum, last_updated, input_type, cadence, step_size, step_unit, display_order)
-		VALUES ('Meditation', 'Habit', 'steady', ?, 'counter', 'daily', 5, 'min', 2)`, today)
+	db.Exec(`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, target_value, target_period)
+		VALUES ('Wake to alarm', ?, 'boolean', 0, '', 1, 1, 'daily')`, today)
+	db.Exec(`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, target_value, target_period)
+		VALUES ('Meditation', ?, 'counter', 5, 'min', 2, 35, 'weekly')`, today)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/register", handleRegister)
