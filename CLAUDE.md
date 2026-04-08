@@ -12,6 +12,7 @@ A personal flywheel for habits, dreams, goals, and projects. Go API + SQLite + P
 - **Say "I don't know" instead of guessing.** If the root cause isn't proven, say so. Don't state confident answers without evidence.
 - **Track work in GitHub Issues.** Every bug or feature should have an issue. Reference it in commits.
 - **Don't make unrequested changes.** Fix what was asked, nothing more.
+- **Names are NOT primary keys.** The `items` table must use `id INTEGER PRIMARY KEY AUTOINCREMENT` with `name TEXT UNIQUE NOT NULL`. Never use a mutable user-facing string as a PK.
 
 ## Local dev
 ```bash

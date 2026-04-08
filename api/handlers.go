@@ -122,6 +122,10 @@ func handleGetItem(w http.ResponseWriter, r *http.Request) {
 func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	var update struct {
+		Name          *string `json:"name"`
+		InputType     *string `json:"input_type"`
+		StepSize      *int    `json:"step_size"`
+		StepUnit      *string `json:"step_unit"`
 		CompletedDate *string `json:"completed_date"`
 		Active        *int    `json:"active"`
 		TargetValue   *int    `json:"target_value"`
@@ -133,6 +137,32 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	today := time.Now().Format("2006-01-02")
+	if update.Name != nil && *update.Name != "" && *update.Name != name {
+		tx, err := db.Begin()
+		if err != nil {
+			http.Error(w, "db error", 500)
+			return
+		}
+		tx.Exec("UPDATE logs SET item_name = ? WHERE item_name = ?", *update.Name, name)
+		tx.Exec("UPDATE milestones SET item_name = ? WHERE item_name = ?", *update.Name, name)
+		_, err = tx.Exec("UPDATE items SET name = ?, last_updated = ? WHERE name = ?", *update.Name, today, name)
+		if err != nil {
+			tx.Rollback()
+			http.Error(w, "rename failed", 400)
+			return
+		}
+		tx.Commit()
+		name = *update.Name
+	}
+	if update.InputType != nil {
+		db.Exec("UPDATE items SET input_type = ?, last_updated = ? WHERE name = ?", *update.InputType, today, name)
+	}
+	if update.StepSize != nil {
+		db.Exec("UPDATE items SET step_size = ?, last_updated = ? WHERE name = ?", *update.StepSize, today, name)
+	}
+	if update.StepUnit != nil {
+		db.Exec("UPDATE items SET step_unit = ?, last_updated = ? WHERE name = ?", *update.StepUnit, today, name)
+	}
 	if update.CompletedDate != nil {
 		db.Exec("UPDATE items SET completed_date = ?, last_updated = ? WHERE name = ?", *update.CompletedDate, today, name)
 	}
