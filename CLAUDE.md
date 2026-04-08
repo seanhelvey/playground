@@ -12,7 +12,8 @@ A personal flywheel for habits, dreams, goals, and projects. Go API + SQLite + P
 - **Say "I don't know" instead of guessing.** If the root cause isn't proven, say so. Don't state confident answers without evidence.
 - **Track work in GitHub Issues.** Every bug or feature should have an issue. Reference it in commits.
 - **Don't make unrequested changes.** Fix what was asked, nothing more.
-- **Names are NOT primary keys.** The `items` table must use `id INTEGER PRIMARY KEY AUTOINCREMENT`. Name is `TEXT NOT NULL` with uniqueness scoped to the owner (e.g. `UNIQUE(user_id, name)`), not globally unique. Never use a mutable user-facing string as a PK.
+- **Names are NOT primary keys.** The `items` table must use `id INTEGER PRIMARY KEY AUTOINCREMENT`. Name is a mutable user-facing label — `TEXT NOT NULL`, no uniqueness constraint. `id` is identity. Never constrain mutable fields for uniqueness; that breaks when users rename things.
+- **Multi-tenancy is coming.** Items will need a `user_id` column. Don't design anything that assumes items are globally shared. See issue for tracking this migration.
 
 ## Local dev
 ```bash
