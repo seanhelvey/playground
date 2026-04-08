@@ -24,37 +24,6 @@
     .hidden { display: none; }
     h2 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #c4cbd5; margin: 2rem 0 0.6rem; }
 
-    /* ── Pulse ── */
-    .pulse {
-      display: flex; gap: 1.25rem; flex-wrap: wrap;
-      padding: 0.9rem 1.25rem; background: #1a1d27;
-      border: 1px solid #2a2d3a; border-radius: 10px;
-      margin-bottom: 1.5rem; font-size: 0.95rem; font-weight: 600;
-    }
-    .pulse-item { display: flex; align-items: center; gap: 0.4rem; }
-    .pulse-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .pulse-rising .pulse-dot { background: #34d399; }
-    .pulse-steady .pulse-dot { background: #60a5fa; }
-    .pulse-stalling .pulse-dot { background: #fbbf24; }
-    .pulse-dormant .pulse-dot { background: #555b66; }
-    .pulse-rising .pulse-count { color: #34d399; }
-    .pulse-steady .pulse-count { color: #60a5fa; }
-    .pulse-stalling .pulse-count { color: #fbbf24; }
-    .pulse-dormant .pulse-count { color: #555b66; }
-    .pulse-label { color: #bcc3cd; }
-
-    /* ── Latest check-in bar ── */
-    .checkin-bar {
-      display: flex; gap: 1.5rem; flex-wrap: wrap;
-      padding: 0.9rem 1.25rem; background: #1a1d27;
-      border: 1px solid #2a2d3a; border-radius: 10px;
-      margin-bottom: 1.5rem; font-size: 0.9rem;
-    }
-    .checkin-bar .label { color: #bcc3cd; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 2px; }
-    .checkin-bar .value { color: #e2e4e9; font-weight: 600; }
-    .score-high { color: #34d399; } .score-mid { color: #fbbf24; } .score-low { color: #f87171; }
-    .checkin-bar .word { color: #a78bfa; font-style: italic; }
-
     /* ── Check-in section ── */
     .ci-section {
       background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px;
@@ -160,40 +129,6 @@
     .ci-indicator { font-size: 0.85rem; color: #34d399; min-width: 1.5ch; margin-left: auto; }
     .ci-indicator.error { color: #f87171; }
 
-    /* ── Tracker table ── */
-    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-    thead th { text-align: left; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #c4cbd5; padding: 0.6rem 0.75rem; background: #1a1d27; border-bottom: 2px solid #2a2d3a; }
-    tbody tr.row { cursor: pointer; transition: background 0.15s; }
-    tbody tr.row:hover { background: #1a1d27; }
-    tbody td { padding: 0.75rem 0.75rem; vertical-align: top; border-bottom: 1px solid #1e2130; color: #c9cdd5; }
-    .col-name { font-weight: 600; color: #e2e4e9; white-space: nowrap; }
-    .col-name a { color: #60a5fa; text-decoration: none; margin-left: 4px; font-size: 0.85em; }
-    .col-chevron { width: 24px; color: #555b66; text-align: center; font-size: 0.8rem; transition: transform 0.15s; }
-    tr.row.expanded .col-chevron { transform: rotate(90deg); }
-    .col-momentum { white-space: nowrap; }
-    .momentum-rising { color: #34d399; }
-    .momentum-steady { color: #60a5fa; }
-    .momentum-stalling { color: #fbbf24; }
-    .momentum-dormant { color: #555b66; }
-    .col-milestones { font-size: 0.9rem; }
-    .milestone-tag { display: inline-block; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 1px 6px; font-size: 0.82rem; color: #34d399; margin: 1px 2px; }
-    .col-updated { white-space: nowrap; color: #bcc3cd; font-size: 0.9rem; }
-
-    tr.detail-row td { background: #141620; padding: 0.75rem 1rem; border-bottom: 1px solid #1e2130; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .detail-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #c4cbd5; margin-bottom: 0.3rem; }
-    .detail-text { font-size: 0.95rem; color: #c9cdd5; margin-bottom: 0.75rem; }
-    .log-entry { font-size: 0.92rem; color: #bcc3cd; margin-bottom: 0.35rem; }
-    .log-date { color: #bcc3cd; margin-right: 0.4rem; }
-    .log-rec { color: #60a5fa; }
-    .log-rec::before { content: "\2192 "; color: #60a5fa; }
-
-    /* ── Wins ── */
-    .wins-list { list-style: none; padding: 0; }
-    .win-item { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e2130; font-size: 0.95rem; color: #c9cdd5; }
-    .win-date { flex-shrink: 0; color: #bcc3cd; font-size: 0.9rem; }
-    .win-icon { color: #34d399; flex-shrink: 0; }
-
     /* ── Activity log ── */
     #activity-log {
       background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px;
@@ -218,23 +153,6 @@
     /* ── Mobile ── */
     @media (max-width: 700px) {
       body { padding: 24px 16px 60px; }
-      table, thead, tbody, tr, td { display: block; width: 100%; }
-      thead { display: none; }
-      .checkin-bar { flex-direction: column; gap: 0.75rem; }
-      tbody tr.row {
-        background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 8px;
-        margin-bottom: 0.75rem; padding: 0.8rem 1rem;
-        display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.6rem;
-      }
-      tbody tr.row td { border: none; padding: 0; }
-      .col-name { font-size: 1.05rem; width: 100%; }
-      .col-momentum { display: inline; }
-      .col-milestones { width: 100%; }
-      .col-updated { width: 100%; }
-      .col-chevron { display: none; }
-      tr.detail-row { margin-top: -0.75rem; margin-bottom: 0.75rem; }
-      tr.detail-row td { border: 1px solid #2a2d3a; border-top: none; border-radius: 0 0 8px 8px; padding: 0.75rem 1rem; }
-      .detail-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -276,34 +194,8 @@
     }
 
     /* ── Helpers ── */
-    const MOMENTUM_ARROWS = { rising: '\u2191', steady: '\u2192', stalling: '\u2193', dormant: '\u00b7' };
-    const MOMENTUM_ORDER = { rising: 0, steady: 1, stalling: 2, dormant: 3 };
-    function fmtDate(s) { return new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
-    function fmtTarget(s) { return s ? new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ''; }
-    function scoreClass(n) { return n >= 7 ? 'score-high' : n >= 4 ? 'score-mid' : 'score-low'; }
-
-    /* ── Renders ── */
-    function renderPulse(items) {
-      const c = { rising: 0, steady: 0, stalling: 0, dormant: 0 };
-      items.forEach(i => c[i.momentum]++);
-      document.getElementById('pulse').innerHTML = ['rising','steady','stalling','dormant']
-        .filter(m => c[m]).map(m => `<div class="pulse-item pulse-${m}"><span class="pulse-dot"></span><span class="pulse-count">${c[m]}</span> <span class="pulse-label">${m}</span></div>`).join('');
-    }
-
-    function renderCheckinBar(checkins) {
-      const latest = checkins[0];
-      if (!latest) return;
-      const bar = document.getElementById('checkin-bar');
-      bar.classList.remove('hidden');
-      let h = '';
-      if (latest.body != null) h += `<div><span class="label">Body</span><span class="value score ${scoreClass(latest.body)}">${latest.body}/10</span></div>`;
-      if (latest.mind != null) h += `<div><span class="label">Mind</span><span class="value score ${scoreClass(latest.mind)}">${latest.mind}/10</span></div>`;
-      if (latest.social != null) h += `<div><span class="label">Social</span><span class="value score ${scoreClass(latest.social)}">${latest.social}/10</span></div>`;
-      if (latest.feeling) h += `<div><span class="label">Feeling</span><span class="value word">${latest.feeling}</span></div>`;
-      if (latest.more_of) h += `<div><span class="label">More of</span><span class="value">${latest.more_of}</span></div>`;
-      if (latest.less_of) h += `<div><span class="label">Less of</span><span class="value">${latest.less_of}</span></div>`;
-      h += `<div><span class="label">Date</span><span class="value" style="color:#bcc3cd">${fmtDate(latest.date)}</span></div>`;
-      bar.innerHTML = h;
+    function fmtCount(val, unit) {
+      return unit === 'min' ? `${val}m` : `${val}`;
     }
 
     /* ── Check-in section ── */
@@ -330,10 +222,6 @@
 
     function todayTotal(item) {
       return (item.log || []).filter(e => e.date === today).reduce((s, e) => s + (parseInt(e.note) || 0), 0);
-    }
-
-    function fmtCount(val, unit) {
-      return unit === 'min' ? `${val}m` : `${val}`;
     }
 
     function renderCheckinSection(items, todayCheckin) {
@@ -501,41 +389,6 @@
             autoSaveLog(input.dataset.item, input.value, ind);
           }, 600);
         };
-      });
-    }
-
-    /* ── Tracker rows ── */
-    function renderRow(item) {
-      const row = document.createElement('tr');
-      row.className = 'row';
-      const nameExtra = item.url ? ` <a href="${item.url}" target="_blank">\u2197</a>` : '';
-      const ms = (item.milestones||[]).map(m => `<span class="milestone-tag">${m.label}</span>`).join('') || '<span style="color:#2a2d3a">\u2014</span>';
-      row.innerHTML = `<td class="col-chevron">\u25B8</td><td class="col-name">${item.name}${nameExtra}</td><td class="col-momentum momentum-${item.momentum}">${MOMENTUM_ARROWS[item.momentum]||'\u00b7'} ${item.momentum}</td><td class="col-milestones">${ms}</td><td class="col-updated">${fmtDate(item.last_updated)}</td>`;
-      const det = document.createElement('tr');
-      det.className = 'detail-row hidden';
-      const logs = (item.log||[]).map(e => `<div class="log-entry ${e.type==='recommendation'?'log-rec':''}"><span class="log-date">${fmtDate(e.date)}</span>${e.note}</div>`).join('') || '<div class="log-entry" style="color:#bcc3cd">No entries yet.</div>';
-      let left = `<div class="detail-label">Focus</div><div class="detail-text">${item.focus||'\u2014'}</div><div class="detail-label">Next step</div><div class="detail-text">${item.next||'\u2014'}</div>`;
-      if (item.target_date) left += `<div class="detail-label">Target</div><div class="detail-text">${fmtTarget(item.target_date)}</div>`;
-      if (item.success_criteria) left += `<div class="detail-label">Success criteria</div><div class="detail-text">${item.success_criteria}</div>`;
-      let right = `<div class="detail-label">Log</div>${logs}`;
-      if ((item.milestones||[]).length) {
-        right += `<div class="detail-label" style="margin-top:0.75rem">Milestones</div>`;
-        right += item.milestones.map(m => `<div class="log-entry"><span class="log-date">${fmtDate(m.date)}</span><span style="color:#34d399">${m.label}</span></div>`).join('');
-      }
-      det.innerHTML = `<td colspan="5"><div class="detail-grid"><div>${left}</div><div>${right}</div></div></td>`;
-      row.onclick = e => { if (e.target.tagName !== 'A') { row.classList.toggle('expanded'); det.classList.toggle('hidden'); } };
-      return [row, det];
-    }
-
-    function renderWins(wins) {
-      if (!wins || !wins.length) return;
-      document.getElementById('wins-section').classList.remove('hidden');
-      const list = document.getElementById('wins-list');
-      wins.forEach(w => {
-        const li = document.createElement('li');
-        li.className = 'win-item';
-        li.innerHTML = `<span class="win-icon">\u2605</span><span class="win-date">${fmtDate(w.date)}</span><span>${w.note}</span>`;
-        list.appendChild(li);
       });
     }
 

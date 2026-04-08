@@ -104,7 +104,6 @@ func migrateAlter(db *sql.DB) error {
 		"ALTER TABLE items ADD COLUMN target_period TEXT",
 		"ALTER TABLE items ADD COLUMN range_min INTEGER NOT NULL DEFAULT 1",
 		"ALTER TABLE items ADD COLUMN range_max INTEGER NOT NULL DEFAULT 10",
-		"ALTER TABLE items ADD COLUMN tags TEXT",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {
@@ -124,26 +123,26 @@ func migrateAlter(db *sql.DB) error {
 
 	// Insert new items (idempotent)
 	type newItem struct {
-		name, inputType, cadence, stepUnit, tags string
-		stepSize, order, rangeMin, rangeMax       int
+		name, inputType, cadence, stepUnit string
+		stepSize, order, rangeMin, rangeMax int
 	}
 	inserts := []newItem{
-		{"No work after dinner", "boolean", "daily", "", "", 0, 5, 1, 10},
-		{"App time under target", "boolean", "daily", "", "", 0, 6, 1, 10},
-		{"Live closer to nature", "goal", "ongoing", "", `["nature"]`, 0, 7, 1, 10},
-		{"Plant ID", "counter", "daily", "species", `["nature"]`, 1, 8, 1, 10},
-		{"Gardening", "counter", "weekly", "min", `["nature"]`, 30, 9, 1, 10},
-		{"Fishing", "boolean", "weekly", "", `["nature"]`, 0, 10, 1, 10},
-		{"Body", "slider", "daily", "", `["health"]`, 1, 17, 1, 10},
-		{"Mind", "slider", "daily", "", `["health"]`, 1, 18, 1, 10},
-		{"Social", "slider", "daily", "", `["social"]`, 1, 19, 1, 10},
+		{"No work after dinner", "boolean", "daily", "", 0, 5, 1, 10},
+		{"App time under target", "boolean", "daily", "", 0, 6, 1, 10},
+		{"Live closer to nature", "goal", "ongoing", "", 0, 7, 1, 10},
+		{"Plant ID", "counter", "daily", "species", 1, 8, 1, 10},
+		{"Gardening", "counter", "weekly", "min", 30, 9, 1, 10},
+		{"Fishing", "boolean", "weekly", "", 0, 10, 1, 10},
+		{"Body", "slider", "daily", "", 1, 17, 1, 10},
+		{"Mind", "slider", "daily", "", 1, 18, 1, 10},
+		{"Social", "slider", "daily", "", 1, 19, 1, 10},
 	}
 	today := "2026-04-07"
 	for _, it := range inserts {
 		db.Exec(
-			`INSERT OR IGNORE INTO items (name, momentum, last_updated, input_type, cadence, step_size, step_unit, display_order, range_min, range_max, tags, active)
-			 VALUES (?, 'dormant', ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-			it.name, today, it.inputType, it.cadence, it.stepSize, it.stepUnit, it.order, it.rangeMin, it.rangeMax, it.tags,
+			`INSERT OR IGNORE INTO items (name, momentum, last_updated, input_type, cadence, step_size, step_unit, display_order, range_min, range_max, active)
+			 VALUES (?, 'dormant', ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+			it.name, today, it.inputType, it.cadence, it.stepSize, it.stepUnit, it.order, it.rangeMin, it.rangeMax,
 		)
 	}
 

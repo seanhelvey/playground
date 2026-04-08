@@ -28,7 +28,6 @@ type Item struct {
 	RangeMax        int         `json:"range_max"`
 	TargetValue     *int        `json:"target_value,omitempty"`
 	TargetPeriod    *string     `json:"target_period,omitempty"`
-	Tags            *string     `json:"tags,omitempty"`
 	DisplayOrder    int         `json:"display_order"`
 	Children        []string    `json:"children"`
 	Milestones      []Milestone `json:"milestones"`
@@ -51,7 +50,7 @@ type Milestone struct {
 }
 
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, tags, display_order FROM items WHERE active = 1 ORDER BY display_order, name")
+	rows, err := db.Query("SELECT name, type, momentum, focus, next, url, target_date, success_criteria, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, display_order FROM items WHERE active = 1 ORDER BY display_order, name")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
@@ -62,7 +61,7 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 	items := []Item{}
 	for rows.Next() {
 		var it Item
-		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.Tags, &it.DisplayOrder)
+		rows.Scan(&it.Name, &it.Type, &it.Momentum, &it.Focus, &it.Next, &it.URL, &it.TargetDate, &it.SuccessCriteria, &it.LastUpdated, &it.InputType, &it.Cadence, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder)
 
 		it.Children = []string{}
 		if cRows, err := db.Query("SELECT child_name FROM item_relationships WHERE parent_name = ?", it.Name); err == nil {
@@ -110,7 +109,6 @@ func handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		RangeMax     int     `json:"range_max"`
 		TargetValue  *int    `json:"target_value"`
 		TargetPeriod *string `json:"target_period"`
-		Tags         *string `json:"tags"`
 		ParentName   *string `json:"parent_name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
@@ -129,10 +127,10 @@ func handleCreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 	today := time.Now().Format("2006-01-02")
 	_, err := db.Exec(
-		`INSERT INTO items (name, momentum, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, tags, active, display_order)
-		 VALUES (?, 'dormant', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 99)`,
+		`INSERT INTO items (name, momentum, last_updated, input_type, cadence, step_size, step_unit, range_min, range_max, target_value, target_period, active, display_order)
+		 VALUES (?, 'dormant', ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 99)`,
 		req.Name, today, req.InputType, req.Cadence, req.StepSize, req.StepUnit,
-		req.RangeMin, req.RangeMax, req.TargetValue, req.TargetPeriod, req.Tags,
+		req.RangeMin, req.RangeMax, req.TargetValue, req.TargetPeriod,
 	)
 	if err != nil {
 		http.Error(w, "item already exists or db error", 400)
