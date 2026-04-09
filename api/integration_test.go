@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -23,19 +25,23 @@ func newTestServer(t *testing.T) (*httptest.Server, *http.Cookie) {
 		t.Fatal(err)
 	}
 
-	// Seed one item we can test against
+	// Seed items we can test against; capture IDs for route construction
 	today := time.Now().Format("2006-01-02")
-	db.Exec(`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, target_value, target_period)
+	res1, _ := db.Exec(`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, target_value, target_period)
 		VALUES ('Wake to alarm', ?, 'boolean', 0, '', 1, 1, 'daily')`, today)
-	db.Exec(`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, target_value, target_period)
+	res2, _ := db.Exec(`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, target_value, target_period)
 		VALUES ('Meditation', ?, 'counter', 5, 'min', 2, 35, 'weekly')`, today)
+	wakeID, _ := res1.LastInsertId()
+	medID, _ := res2.LastInsertId()
+	t.Setenv("TEST_WAKE_ID", strconv.FormatInt(wakeID, 10))
+	t.Setenv("TEST_MED_ID", strconv.FormatInt(medID, 10))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/register", handleRegister)
 	mux.HandleFunc("POST /api/login", handleLogin)
 	api := http.NewServeMux()
 	api.HandleFunc("GET /api/items", handleGetItems)
-	api.HandleFunc("POST /api/items/{name}/log", handleAddLog)
+	api.HandleFunc("POST /api/items/{id}/log", handleAddLog)
 	api.HandleFunc("GET /api/checkins", handleGetCheckins)
 	api.HandleFunc("POST /api/checkins", handleAddCheckin)
 	mux.Handle("/api/", authMiddleware(api))
@@ -88,7 +94,8 @@ func TestTogglePersistedOnReload(t *testing.T) {
 	today := time.Now().Format("2006-01-02")
 
 	// Simulate tapping toggle on
-	resp := apiReq(t, srv, cookie, "POST", "/api/items/Wake%20to%20alarm/log", map[string]string{"note": "Done"})
+	wakeID := os.Getenv("TEST_WAKE_ID")
+	resp := apiReq(t, srv, cookie, "POST", "/api/items/"+wakeID+"/log", map[string]string{"note": "Done"})
 	if resp.StatusCode != 200 {
 		t.Fatalf("log POST returned %d", resp.StatusCode)
 	}
@@ -133,7 +140,8 @@ func TestCounterPersistedOnReload(t *testing.T) {
 	today := time.Now().Format("2006-01-02")
 
 	// Simulate pressing + once (step 5)
-	resp := apiReq(t, srv, cookie, "POST", "/api/items/Meditation/log", map[string]string{"note": "5"})
+	medID := os.Getenv("TEST_MED_ID")
+	resp := apiReq(t, srv, cookie, "POST", "/api/items/"+medID+"/log", map[string]string{"note": "5"})
 	if resp.StatusCode != 200 {
 		t.Fatalf("log POST returned %d", resp.StatusCode)
 	}
@@ -208,8 +216,9 @@ func TestActivityLogCheckinSortsAboveLogs(t *testing.T) {
 	srv, cookie := newTestServer(t)
 
 	// Log several item entries first (these get lower IDs in logs table)
+	medID := os.Getenv("TEST_MED_ID")
 	for i := 0; i < 3; i++ {
-		apiReq(t, srv, cookie, "POST", "/api/items/Meditation/log", map[string]string{"note": "5"})
+		apiReq(t, srv, cookie, "POST", "/api/items/"+medID+"/log", map[string]string{"note": "5"})
 	}
 
 	// Then save a check-in (gets its own ID in check_ins table)

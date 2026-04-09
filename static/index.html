@@ -203,9 +203,9 @@
     const _d = new Date();
     const today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
 
-    async function autoSaveLog(name, note, ind) {
+    async function autoSaveLog(id, note, ind) {
       if (ind) ind.textContent = '·';
-      const res = await fetch(`/api/items/${encodeURIComponent(name)}/log`, {
+      const res = await fetch(`/api/items/${id}/log`, {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ note, date: today })
       });
@@ -239,9 +239,9 @@
             <span class="ci-name">${it.name}</span>
             <span class="ci-indicator" id="ci-ind-${s}"></span>
             <div class="ci-counter">
-              <button class="ci-counter-btn" data-item="${it.name}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">−</button>
+              <button class="ci-counter-btn" data-id="${it.id}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">−</button>
               <span class="ci-counter-val" id="ci-val-${s}" data-raw="${total}">${label}</span>
-              <button class="ci-counter-btn" data-item="${it.name}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">+</button>
+              <button class="ci-counter-btn" data-id="${it.id}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">+</button>
             </div>
           </div>`;
         } else if (it.input_type === 'slider') {
@@ -251,7 +251,7 @@
             <span class="ci-name">${it.name}</span>
             <span class="ci-indicator" id="ci-ind-${s}"></span>
             <div class="ci-slider">
-              <input type="range" class="ci-slider-input" min="${it.range_min}" max="${it.range_max}" value="${val}" data-item="${it.name}" data-slug="${s}">
+              <input type="range" class="ci-slider-input" min="${it.range_min}" max="${it.range_max}" value="${val}" data-id="${it.id}" data-slug="${s}">
               <span class="ci-slider-val" id="ci-slval-${s}">${val}</span>
             </div>
           </div>`;
@@ -259,7 +259,7 @@
           const todayLogs = (it.log || []).filter(e => e.date === today);
           const doneToday = todayLogs.length && todayLogs[0].note === 'Done';
           return `<div class="ci-row" id="ci-row-${s}">
-            <button class="ci-toggle${doneToday ? ' on' : ''}" data-item="${it.name}" data-slug="${s}"></button>
+            <button class="ci-toggle${doneToday ? ' on' : ''}" data-id="${it.id}" data-slug="${s}"></button>
             <span class="ci-name">${it.name}</span>
             <span class="ci-indicator" id="ci-ind-${s}"></span>
           </div>`;
@@ -337,7 +337,7 @@
           const isOn = toggle.classList.contains('on');
           toggle.classList.toggle('on');
           const ind = document.getElementById(`ci-ind-${toggle.dataset.slug}`);
-          await autoSaveLog(toggle.dataset.item, isOn ? 'Undone' : 'Done', ind);
+          await autoSaveLog(toggle.dataset.id, isOn ? 'Undone' : 'Done', ind);
         };
       });
 
@@ -353,7 +353,7 @@
           if (next === curRaw && step < 0) return;
           valEl.dataset.raw = next;
           valEl.textContent = fmtCount(next, btn.dataset.unit);
-          await autoSaveLog(btn.dataset.item, String(step), ind);
+          await autoSaveLog(btn.dataset.id, String(step), ind);
         };
       });
 
@@ -367,7 +367,7 @@
           clearTimeout(sliderTimers[s]);
           sliderTimers[s] = setTimeout(() => {
             const ind = document.getElementById(`ci-ind-${s}`);
-            autoSaveLog(input.dataset.item, input.value, ind);
+            autoSaveLog(input.dataset.id, input.value, ind);
           }, 600);
         };
       });

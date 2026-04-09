@@ -11,6 +11,7 @@ import (
 // Items
 
 type Item struct {
+	ID            int        `json:"id"`
 	Name          string     `json:"name"`
 	LastUpdated   string     `json:"last_updated"`
 	InputType     string     `json:"input_type"`
@@ -26,15 +27,14 @@ type Item struct {
 }
 
 type LogEntry struct {
-	ID       int     `json:"id"`
-	ItemName string  `json:"item_name,omitempty"`
-	Date     string  `json:"date"`
-	Type     *string `json:"type,omitempty"`
-	Note     string  `json:"note"`
+	ID   int     `json:"id"`
+	Date string  `json:"date"`
+	Type *string `json:"type,omitempty"`
+	Note string  `json:"note"`
 }
 
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE active = 1 ORDER BY display_order, name")
+	rows, err := db.Query("SELECT id, name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE active = 1 ORDER BY display_order, name")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
@@ -45,10 +45,10 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 	items := []Item{}
 	for rows.Next() {
 		var it Item
-		rows.Scan(&it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
+		rows.Scan(&it.ID, &it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
 
 		it.Log = []LogEntry{}
-		if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", it.Name); err == nil {
+		if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_id = ? ORDER BY id DESC", it.ID); err == nil {
 			for logRows.Next() {
 				var l LogEntry
 				logRows.Scan(&l.ID, &l.Date, &l.Type, &l.Note)
@@ -92,23 +92,27 @@ func handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		req.RangeMin, req.RangeMax, req.TargetValue, req.TargetPeriod,
 	)
 	if err != nil {
-		http.Error(w, "item already exists or db error", 400)
+		http.Error(w, "db error", 400)
 		return
 	}
 	writeJSON(w, map[string]string{"status": "created"})
 }
 
 func handleGetItem(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "bad id", 400)
+		return
+	}
 	var it Item
-	err := db.QueryRow("SELECT name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE name = ? AND active = 1", name).
-		Scan(&it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
+	err = db.QueryRow("SELECT id, name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE id = ? AND active = 1", id).
+		Scan(&it.ID, &it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
 	}
 	it.Log = []LogEntry{}
-	if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_name = ? ORDER BY id DESC", name); err == nil {
+	if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_id = ? ORDER BY id DESC", id); err == nil {
 		for logRows.Next() {
 			var l LogEntry
 			logRows.Scan(&l.ID, &l.Date, &l.Type, &l.Note)
@@ -120,7 +124,11 @@ func handleGetItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "bad id", 400)
+		return
+	}
 	var update struct {
 		Name          *string `json:"name"`
 		InputType     *string `json:"input_type"`
@@ -137,52 +145,42 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	today := time.Now().Format("2006-01-02")
-	if update.Name != nil && *update.Name != "" && *update.Name != name {
-		tx, err := db.Begin()
-		if err != nil {
-			http.Error(w, "db error", 500)
-			return
-		}
-		tx.Exec("UPDATE logs SET item_name = ? WHERE item_name = ?", *update.Name, name)
-		tx.Exec("UPDATE milestones SET item_name = ? WHERE item_name = ?", *update.Name, name)
-		_, err = tx.Exec("UPDATE items SET name = ?, last_updated = ? WHERE name = ?", *update.Name, today, name)
-		if err != nil {
-			tx.Rollback()
-			http.Error(w, "rename failed", 400)
-			return
-		}
-		tx.Commit()
-		name = *update.Name
+	if update.Name != nil {
+		db.Exec("UPDATE items SET name = ?, last_updated = ? WHERE id = ?", *update.Name, today, id)
 	}
 	if update.InputType != nil {
-		db.Exec("UPDATE items SET input_type = ?, last_updated = ? WHERE name = ?", *update.InputType, today, name)
+		db.Exec("UPDATE items SET input_type = ?, last_updated = ? WHERE id = ?", *update.InputType, today, id)
 	}
 	if update.StepSize != nil {
-		db.Exec("UPDATE items SET step_size = ?, last_updated = ? WHERE name = ?", *update.StepSize, today, name)
+		db.Exec("UPDATE items SET step_size = ?, last_updated = ? WHERE id = ?", *update.StepSize, today, id)
 	}
 	if update.StepUnit != nil {
-		db.Exec("UPDATE items SET step_unit = ?, last_updated = ? WHERE name = ?", *update.StepUnit, today, name)
+		db.Exec("UPDATE items SET step_unit = ?, last_updated = ? WHERE id = ?", *update.StepUnit, today, id)
 	}
 	if update.CompletedDate != nil {
-		db.Exec("UPDATE items SET completed_date = ?, last_updated = ? WHERE name = ?", *update.CompletedDate, today, name)
+		db.Exec("UPDATE items SET completed_date = ?, last_updated = ? WHERE id = ?", *update.CompletedDate, today, id)
 	}
 	if update.Active != nil {
-		db.Exec("UPDATE items SET active = ?, last_updated = ? WHERE name = ?", *update.Active, today, name)
+		db.Exec("UPDATE items SET active = ?, last_updated = ? WHERE id = ?", *update.Active, today, id)
 	}
 	if update.TargetValue != nil {
-		db.Exec("UPDATE items SET target_value = ?, last_updated = ? WHERE name = ?", *update.TargetValue, today, name)
+		db.Exec("UPDATE items SET target_value = ?, last_updated = ? WHERE id = ?", *update.TargetValue, today, id)
 	}
 	if update.TargetPeriod != nil {
-		db.Exec("UPDATE items SET target_period = ?, last_updated = ? WHERE name = ?", *update.TargetPeriod, today, name)
+		db.Exec("UPDATE items SET target_period = ?, last_updated = ? WHERE id = ?", *update.TargetPeriod, today, id)
 	}
 	if update.DisplayOrder != nil {
-		db.Exec("UPDATE items SET display_order = ? WHERE name = ?", *update.DisplayOrder, name)
+		db.Exec("UPDATE items SET display_order = ? WHERE id = ?", *update.DisplayOrder, id)
 	}
 	writeJSON(w, map[string]string{"status": "updated"})
 }
 
 func handleAddLog(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "bad id", 400)
+		return
+	}
 	var entry struct {
 		Note string  `json:"note"`
 		Type *string `json:"type,omitempty"`
@@ -197,8 +195,8 @@ func handleAddLog(w http.ResponseWriter, r *http.Request) {
 	if len(date) != 10 || date[4] != '-' || date[7] != '-' {
 		date = time.Now().Format("2006-01-02")
 	}
-	db.Exec("INSERT INTO logs (item_name, date, type, note) VALUES (?, ?, ?, ?)", name, date, entry.Type, entry.Note)
-	db.Exec("UPDATE items SET last_updated = ? WHERE name = ?", date, name)
+	db.Exec("INSERT INTO logs (item_id, date, type, note) VALUES (?, ?, ?, ?)", id, date, entry.Type, entry.Note)
+	db.Exec("UPDATE items SET last_updated = ? WHERE id = ?", date, id)
 	writeJSON(w, map[string]string{"status": "logged"})
 }
 
@@ -309,4 +307,3 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	db.Exec("DELETE FROM tasks WHERE id = ?", id)
 	writeJSON(w, map[string]string{"status": "deleted"})
 }
-
