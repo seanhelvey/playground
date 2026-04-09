@@ -236,6 +236,68 @@ func TestActivityLogCheckinSortsAboveLogs(t *testing.T) {
 	}
 }
 
+// TestActivityLogAllItemTypes proves that boolean, counter, and slider items all
+// return log entries via GET /api/items — the data the activity log renders from.
+func TestActivityLogAllItemTypes(t *testing.T) {
+	srv, cookie := newTestServer(t)
+	today := time.Now().Format("2006-01-02")
+
+	// Create a slider item directly (Body/Mind/Social are slider items)
+	res3, err := db.Exec(`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, range_min, range_max)
+		VALUES ('Body', ?, 'slider', 1, '', 17, 1, 10)`, today)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bodyID, _ := res3.LastInsertId()
+	bodyIDStr := strconv.FormatInt(bodyID, 10)
+
+	wakeID := os.Getenv("TEST_WAKE_ID")
+	medID := os.Getenv("TEST_MED_ID")
+
+	// Log each item type
+	for _, tc := range []struct{ id, note, label string }{
+		{wakeID, "Done", "boolean (Wake to alarm)"},
+		{medID, "5", "counter (Meditation)"},
+		{bodyIDStr, "7", "slider (Body)"},
+	} {
+		resp := apiReq(t, srv, cookie, "POST", "/api/items/"+tc.id+"/log", map[string]string{"note": tc.note})
+		if resp.StatusCode != 200 {
+			t.Fatalf("%s log POST returned %d", tc.label, resp.StatusCode)
+		}
+	}
+
+	// Reload items (simulates page reload)
+	resp := apiReq(t, srv, cookie, "GET", "/api/items", nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("GET /api/items returned %d", resp.StatusCode)
+	}
+	var items []Item
+	json.NewDecoder(resp.Body).Decode(&items)
+
+	byName := map[string]*Item{}
+	for i := range items {
+		byName[items[i].Name] = &items[i]
+	}
+
+	// Each item must have a today log entry so it appears in the activity log
+	for _, name := range []string{"Wake to alarm", "Meditation", "Body"} {
+		it := byName[name]
+		if it == nil {
+			t.Fatalf("%s not found in items response — would be absent from activity log", name)
+		}
+		var hasToday bool
+		for _, l := range it.Log {
+			if l.Date == today {
+				hasToday = true
+				break
+			}
+		}
+		if !hasToday {
+			t.Fatalf("%s has no log entry for today — would not appear in activity log after reload", name)
+		}
+	}
+}
+
 func parseInt(s string) int {
 	n := 0
 	for _, c := range s {

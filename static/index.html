@@ -51,7 +51,8 @@
     .ci-toggle.on { background: #34d399; }
     .ci-toggle.on::after { left: 19px; background: #0f1117; }
 
-    .ci-name { font-weight: 600; font-size: 0.95rem; color: #e2e4e9; flex: 1; }
+    .ci-name { font-weight: 600; font-size: 0.95rem; color: #e2e4e9; }
+    .ci-progress { font-size: 0.72rem; color: #555b66; display: block; line-height: 1.4; }
     .ci-type { font-size: 0.72rem; color: #555b66; text-transform: uppercase; letter-spacing: 0.06em; }
     .ci-note-toggle { background: none; border: none; color: #555b66; font-size: 0.82rem; cursor: pointer; padding: 2px 6px; }
     .ci-note-toggle:hover { color: #60a5fa; }
@@ -127,8 +128,25 @@
     .ci-submit:disabled { opacity: 0.5; cursor: not-allowed; }
     .ci-msg { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: #34d399; }
     .ci-msg.error { color: #f87171; }
-    .ci-indicator { font-size: 0.85rem; color: #34d399; min-width: 1.5ch; margin-left: auto; }
-    .ci-indicator.error { color: #f87171; }
+    .ci-indicator { font-size: 0.85rem; color: #34d399; min-width: 1.5ch; }
+
+    /* ── Item config panel ── */
+    .ci-cfg-btn {
+      background: none; border: none; color: #3a3f4a; cursor: pointer;
+      font-size: 0.9rem; padding: 4px 6px; flex-shrink: 0; line-height: 1;
+      touch-action: manipulation;
+    }
+    .ci-cfg-btn:hover { color: #bcc3cd; }
+    .ci-cfg {
+      display: none; padding: 0.6rem 0 0.5rem;
+      border-top: 1px solid #1e2130;
+    }
+    .ci-cfg.open { display: block; }
+    .ci-cfg-remove {
+      padding: 8px 12px; border: 1px solid #f87171; background: none;
+      border-radius: 8px; color: #f87171; cursor: pointer; font-size: 0.85rem;
+      touch-action: manipulation;
+    }
 
     /* ── Activity log ── */
     #activity-log {
@@ -206,12 +224,65 @@
 
     /* ── Helpers ── */
     function fmtCount(val, unit) {
-      return unit === 'min' ? `${val}m` : `${val}`;
+      if (!unit) return `${val}`;
+      if (unit === 'min') return `${val}m`;
+      if (unit === 'hr') return `${val}hr`;
+      return `${val} ${unit}`;
     }
 
     /* ── Check-in section ── */
     const _d = new Date();
     const today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+
+    function periodStart(period) {
+      const now = new Date();
+      if (period === 'daily') return today;
+      if (period === 'weekly') {
+        const d = new Date(now);
+        const day = d.getDay();
+        d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      }
+      if (period === 'monthly') {
+        return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+      }
+      return null;
+    }
+
+    function periodTotal(item) {
+      const start = item.target_period ? periodStart(item.target_period) : null;
+      if (!start) return null;
+      const logs = (item.log || []).filter(e => e.date >= start);
+      if (item.input_type === 'boolean') {
+        const byDate = {};
+        logs.forEach(e => {
+          if (!byDate[e.date]) byDate[e.date] = 0;
+          byDate[e.date] += e.note === 'Done' ? 1 : e.note === 'Undone' ? -1 : 0;
+        });
+        return Object.values(byDate).filter(v => v > 0).length;
+      }
+      if (item.input_type === 'counter') {
+        return logs.reduce((s, e) => s + (parseInt(e.note) || 0), 0);
+      }
+      return null;
+    }
+
+    function periodLabel(period) {
+      if (period === 'daily') return 'today';
+      if (period === 'weekly') return 'this week';
+      if (period === 'monthly') return 'this month';
+      return '';
+    }
+
+    function periodProgress(item) {
+      if (item.input_type === 'slider') return '';
+      const total = periodTotal(item);
+      if (total === null || !item.target_value || !item.target_period) return '';
+      const unit = item.step_unit || '';
+      const totalFmt = item.input_type === 'boolean' ? `${total}` : fmtCount(total, unit);
+      const targetFmt = item.input_type === 'boolean' ? `${item.target_value}` : fmtCount(item.target_value, unit);
+      return `${totalFmt} / ${targetFmt} ${periodLabel(item.target_period)}`;
+    }
 
     async function autoSaveLog(id, note, ind) {
       if (ind) ind.textContent = '·';
@@ -242,38 +313,73 @@
 
       function renderItem(it) {
         const s = slug(it.name);
+        const progress = periodProgress(it);
+        const nameBlock = `<div style="flex:1;min-width:0">
+          <span class="ci-name">${it.name}</span>
+          ${progress ? `<span class="ci-progress">${progress}</span>` : ''}
+        </div>`;
+
+        let rowInner = '';
         if (it.input_type === 'counter') {
           const total = todayTotal(it);
-          const label = fmtCount(total, it.step_unit);
-          return `<div class="ci-row" id="ci-row-${s}">
-            <span class="ci-name">${it.name}</span>
+          rowInner = `${nameBlock}
             <span class="ci-indicator" id="ci-ind-${s}"></span>
             <div class="ci-counter">
               <button class="ci-counter-btn" data-id="${it.id}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">−</button>
-              <span class="ci-counter-val" id="ci-val-${s}" data-raw="${total}">${label}</span>
+              <span class="ci-counter-val" id="ci-val-${s}" data-raw="${total}">${fmtCount(total, it.step_unit)}</span>
               <button class="ci-counter-btn" data-id="${it.id}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">+</button>
-            </div>
-          </div>`;
+            </div>`;
         } else if (it.input_type === 'slider') {
           const todayLogs = (it.log || []).filter(e => e.date === today);
           const val = todayLogs.length ? (parseInt(todayLogs[0].note) || it.range_min) : Math.round((it.range_min + it.range_max) / 2);
-          return `<div class="ci-row" id="ci-row-${s}">
-            <span class="ci-name">${it.name}</span>
+          rowInner = `${nameBlock}
             <span class="ci-indicator" id="ci-ind-${s}"></span>
             <div class="ci-slider">
               <input type="range" class="ci-slider-input" min="${it.range_min}" max="${it.range_max}" value="${val}" data-id="${it.id}" data-slug="${s}">
               <span class="ci-slider-val" id="ci-slval-${s}">${val}</span>
-            </div>
-          </div>`;
+            </div>`;
         } else {
           const todayLogs = (it.log || []).filter(e => e.date === today);
           const doneToday = todayLogs.length && todayLogs[0].note === 'Done';
-          return `<div class="ci-row" id="ci-row-${s}">
-            <button class="ci-toggle${doneToday ? ' on' : ''}" data-id="${it.id}" data-slug="${s}"></button>
-            <span class="ci-name">${it.name}</span>
-            <span class="ci-indicator" id="ci-ind-${s}"></span>
-          </div>`;
+          rowInner = `<button class="ci-toggle${doneToday ? ' on' : ''}" data-id="${it.id}" data-slug="${s}"></button>
+            ${nameBlock}
+            <span class="ci-indicator" id="ci-ind-${s}"></span>`;
         }
+
+        const isCounter = it.input_type === 'counter';
+        const cfgHtml = `<div class="ci-cfg" id="ci-cfg-${s}">
+          <select class="form-input ci-cfg-type" data-id="${it.id}" data-slug="${s}" style="margin-bottom:0.4rem;background:#0f1117">
+            <option value="boolean"${it.input_type === 'boolean' ? ' selected' : ''}>Toggle (yes/no)</option>
+            <option value="counter"${it.input_type === 'counter' ? ' selected' : ''}>Counter (+/−)</option>
+            <option value="slider"${it.input_type === 'slider' ? ' selected' : ''}>Slider (range)</option>
+          </select>
+          <div class="ci-cfg-counter-opts" style="display:${isCounter ? 'flex' : 'none'};gap:0.4rem;margin-bottom:0.4rem">
+            <input class="form-input" id="ci-cfg-step-${s}" type="number" placeholder="Step size" value="${it.step_size || ''}" style="flex:1">
+            <input class="form-input" id="ci-cfg-unit-${s}" placeholder="Unit (min, hr…)" value="${it.step_unit || ''}" style="flex:1">
+          </div>
+          <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem">
+            <input class="form-input" id="ci-cfg-tval-${s}" type="number" placeholder="Target" value="${it.target_value != null ? it.target_value : ''}" style="flex:1">
+            <select class="form-input" id="ci-cfg-tperiod-${s}" style="flex:1;background:#0f1117">
+              <option value="">No period</option>
+              <option value="daily"${it.target_period === 'daily' ? ' selected' : ''}>Daily</option>
+              <option value="weekly"${it.target_period === 'weekly' ? ' selected' : ''}>Weekly</option>
+              <option value="monthly"${it.target_period === 'monthly' ? ' selected' : ''}>Monthly</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:0.4rem">
+            <button class="ci-submit ci-cfg-save" data-id="${it.id}" data-slug="${s}" style="flex:1;margin-top:0;padding:8px;font-size:0.85rem">Save</button>
+            <button class="ci-cfg-remove" data-id="${it.id}">Remove</button>
+          </div>
+          <div class="ci-msg" id="ci-cfg-msg-${s}" style="font-size:0.82rem;margin-top:0.3rem"></div>
+        </div>`;
+
+        return `<div class="ci-item">
+          <div class="ci-row" id="ci-row-${s}">
+            ${rowInner}
+            <button class="ci-cfg-btn" data-slug="${s}">⚙</button>
+          </div>
+          ${cfgHtml}
+        </div>`;
       }
 
       let html = '';
@@ -312,7 +418,7 @@
 
       section.innerHTML = html;
 
-      // Wire type select → show/hide extra fields
+      // Wire type select → show/hide extra fields (add-item form)
       const typeSelect = document.getElementById('new-item-type');
       typeSelect.onchange = () => {
         document.getElementById('new-item-counter-opts').style.display = typeSelect.value === 'counter' ? 'flex' : 'none';
@@ -340,6 +446,61 @@
           msg.textContent = '✗ Failed'; msg.classList.add('error');
         }
       };
+
+      // Wire config toggles
+      document.querySelectorAll('.ci-cfg-btn').forEach(btn => {
+        btn.onclick = () => {
+          const cfg = document.getElementById(`ci-cfg-${btn.dataset.slug}`);
+          if (cfg) cfg.classList.toggle('open');
+        };
+      });
+
+      // Wire config type select → show/hide counter opts
+      document.querySelectorAll('.ci-cfg-type').forEach(sel => {
+        sel.onchange = () => {
+          const s = sel.dataset.slug;
+          const opts = document.querySelector(`#ci-cfg-${s} .ci-cfg-counter-opts`);
+          if (opts) opts.style.display = sel.value === 'counter' ? 'flex' : 'none';
+        };
+      });
+
+      // Wire config save
+      document.querySelectorAll('.ci-cfg-save').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const s = btn.dataset.slug;
+          const msg = document.getElementById(`ci-cfg-msg-${s}`);
+          const body = {
+            input_type: document.querySelector(`#ci-cfg-${s} .ci-cfg-type`)?.value,
+            step_size: parseInt(document.getElementById(`ci-cfg-step-${s}`)?.value) || 0,
+            step_unit: document.getElementById(`ci-cfg-unit-${s}`)?.value || '',
+          };
+          const tval = document.getElementById(`ci-cfg-tval-${s}`)?.value;
+          const tperiod = document.getElementById(`ci-cfg-tperiod-${s}`)?.value;
+          if (tval !== '') body.target_value = parseInt(tval) || 0;
+          if (tperiod) body.target_period = tperiod;
+          const res = await fetch(`/api/items/${id}`, {
+            method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+          });
+          if (res.ok) {
+            if (msg) { msg.textContent = '✓ Saved'; msg.classList.remove('error'); }
+            setTimeout(() => location.reload(), 700);
+          } else {
+            if (msg) { msg.textContent = '✗ Failed'; msg.classList.add('error'); }
+          }
+        };
+      });
+
+      // Wire soft delete
+      document.querySelectorAll('.ci-cfg-remove').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('Remove this item? Logs will be preserved.')) return;
+          const res = await fetch(`/api/items/${btn.dataset.id}`, {
+            method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ active: 0 })
+          });
+          if (res.ok) location.reload();
+        };
+      });
 
       // Wire toggles
       document.querySelectorAll('.ci-toggle').forEach(toggle => {
