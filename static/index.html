@@ -447,6 +447,16 @@
         }
       };
 
+      // Optimistically push a log entry and refresh the activity log
+      function pushLog(itemId, note) {
+        const item = (window._items || []).find(it => it.id === parseInt(itemId));
+        if (item) {
+          if (!item.log) item.log = [];
+          item.log.unshift({ id: Date.now(), date: today, note });
+          renderActivityLog(window._items, window._checkins || []);
+        }
+      }
+
       // Wire config toggles
       document.querySelectorAll('.ci-cfg-btn').forEach(btn => {
         btn.onclick = () => {
@@ -507,8 +517,10 @@
         toggle.onclick = async () => {
           const isOn = toggle.classList.contains('on');
           toggle.classList.toggle('on');
+          const note = isOn ? 'Undone' : 'Done';
           const ind = document.getElementById(`ci-ind-${toggle.dataset.slug}`);
-          await autoSaveLog(toggle.dataset.id, isOn ? 'Undone' : 'Done', ind);
+          pushLog(toggle.dataset.id, note);
+          await autoSaveLog(toggle.dataset.id, note, ind);
         };
       });
 
@@ -524,6 +536,7 @@
           if (next === curRaw && step < 0) return;
           valEl.dataset.raw = next;
           valEl.textContent = fmtCount(next, btn.dataset.unit);
+          pushLog(btn.dataset.id, String(step));
           await autoSaveLog(btn.dataset.id, String(step), ind);
         };
       });
@@ -538,6 +551,7 @@
           clearTimeout(sliderTimers[s]);
           sliderTimers[s] = setTimeout(() => {
             const ind = document.getElementById(`ci-ind-${s}`);
+            pushLog(input.dataset.id, input.value);
             autoSaveLog(input.dataset.id, input.value, ind);
           }, 600);
         };
@@ -596,6 +610,7 @@
     ]).then(([items, checkins]) => {
       items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
       window._items = items;
+      window._checkins = checkins;
       const todayCheckin = checkins.find(c => c.date === today) || null;
       renderCheckinSection(items, todayCheckin);
       renderActivityLog(items, checkins);
