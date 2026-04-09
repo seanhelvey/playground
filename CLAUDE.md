@@ -153,3 +153,4 @@ Claude Code = dev tool only (no tokens in deployed app)
 - **Phone-first** — If it doesn't work on the phone, it doesn't work.
 - **Ship simple, improve always** — A working v1 beats a perfect plan.
 - **Engineer for observability** — Errors, save confirmations, health signals are not extras. Keep them readable on the phone without dev tools.
+- **Always display the deployed SHA** — The UI must show the short git SHA fetched from `/api/health`. This makes it immediately obvious whether a deploy succeeded without opening dev tools.
