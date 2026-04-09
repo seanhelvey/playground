@@ -514,12 +514,16 @@
       // Wire toggles
       document.querySelectorAll('.ci-toggle').forEach(toggle => {
         toggle.onclick = async () => {
+          const id = toggle.dataset.id;
           const isOn = toggle.classList.contains('on');
           toggle.classList.toggle('on');
           const note = isOn ? 'Undone' : 'Done';
-          const ind = document.getElementById(`ci-ind-${toggle.dataset.id}`);
-          pushLog(toggle.dataset.id, note);
-          await autoSaveLog(toggle.dataset.id, note, ind);
+          const ind = document.getElementById(`ci-ind-${id}`);
+          pushLog(id, note);
+          const progEl = document.getElementById(`ci-prog-${id}`);
+          const item = (window._items || []).find(it => it.id === parseInt(id));
+          if (progEl && item) progEl.textContent = periodProgress(item);
+          await autoSaveLog(id, note, ind);
         };
       });
 
