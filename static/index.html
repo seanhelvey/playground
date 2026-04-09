@@ -309,57 +309,55 @@
     function renderCheckinSection(items, todayCheckin) {
       const section = document.getElementById('checkin-section');
 
-      function slug(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
-
       function renderItem(it) {
-        const s = slug(it.name);
         const progress = periodProgress(it);
         const nameBlock = `<div style="flex:1;min-width:0">
           <span class="ci-name">${it.name}</span>
-          ${progress ? `<span class="ci-progress">${progress}</span>` : ''}
+          <span class="ci-progress" id="ci-prog-${it.id}">${progress}</span>
         </div>`;
 
         let rowInner = '';
         if (it.input_type === 'counter') {
           const total = todayTotal(it);
           rowInner = `${nameBlock}
-            <span class="ci-indicator" id="ci-ind-${s}"></span>
+            <span class="ci-indicator" id="ci-ind-${it.id}"></span>
             <div class="ci-counter">
-              <button class="ci-counter-btn" data-id="${it.id}" data-step="-${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">−</button>
-              <span class="ci-counter-val" id="ci-val-${s}" data-raw="${total}">${fmtCount(total, it.step_unit)}</span>
-              <button class="ci-counter-btn" data-id="${it.id}" data-step="${it.step_size}" data-unit="${it.step_unit}" data-slug="${s}">+</button>
+              <button class="ci-counter-btn" data-id="${it.id}" data-step="-${it.step_size}" data-unit="${it.step_unit}">−</button>
+              <span class="ci-counter-val" id="ci-val-${it.id}" data-raw="${total}">${fmtCount(total, it.step_unit)}</span>
+              <button class="ci-counter-btn" data-id="${it.id}" data-step="${it.step_size}" data-unit="${it.step_unit}">+</button>
             </div>`;
         } else if (it.input_type === 'slider') {
           const todayLogs = (it.log || []).filter(e => e.date === today);
           const val = todayLogs.length ? (parseInt(todayLogs[0].note) || it.range_min) : Math.round((it.range_min + it.range_max) / 2);
           rowInner = `${nameBlock}
-            <span class="ci-indicator" id="ci-ind-${s}"></span>
+            <span class="ci-indicator" id="ci-ind-${it.id}"></span>
             <div class="ci-slider">
-              <input type="range" class="ci-slider-input" min="${it.range_min}" max="${it.range_max}" value="${val}" data-id="${it.id}" data-slug="${s}">
-              <span class="ci-slider-val" id="ci-slval-${s}">${val}</span>
+              <input type="range" class="ci-slider-input" min="${it.range_min}" max="${it.range_max}" value="${val}" data-id="${it.id}">
+              <span class="ci-slider-val" id="ci-slval-${it.id}">${val}</span>
             </div>`;
         } else {
           const todayLogs = (it.log || []).filter(e => e.date === today);
           const doneToday = todayLogs.length && todayLogs[0].note === 'Done';
-          rowInner = `<button class="ci-toggle${doneToday ? ' on' : ''}" data-id="${it.id}" data-slug="${s}"></button>
+          rowInner = `<button class="ci-toggle${doneToday ? ' on' : ''}" data-id="${it.id}"></button>
             ${nameBlock}
-            <span class="ci-indicator" id="ci-ind-${s}"></span>`;
+            <span class="ci-indicator" id="ci-ind-${it.id}"></span>`;
         }
 
         const isCounter = it.input_type === 'counter';
-        const cfgHtml = `<div class="ci-cfg" id="ci-cfg-${s}">
-          <select class="form-input ci-cfg-type" data-id="${it.id}" data-slug="${s}" style="margin-bottom:0.4rem;background:#0f1117">
+        const cfgHtml = `<div class="ci-cfg" id="ci-cfg-${it.id}">
+          <input class="form-input" id="ci-cfg-name-${it.id}" placeholder="Name" value="${it.name}" style="margin-bottom:0.4rem">
+          <select class="form-input ci-cfg-type" data-id="${it.id}" style="margin-bottom:0.4rem;background:#0f1117">
             <option value="boolean"${it.input_type === 'boolean' ? ' selected' : ''}>Toggle (yes/no)</option>
             <option value="counter"${it.input_type === 'counter' ? ' selected' : ''}>Counter (+/−)</option>
             <option value="slider"${it.input_type === 'slider' ? ' selected' : ''}>Slider (range)</option>
           </select>
           <div class="ci-cfg-counter-opts" style="display:${isCounter ? 'flex' : 'none'};gap:0.4rem;margin-bottom:0.4rem">
-            <input class="form-input" id="ci-cfg-step-${s}" type="number" placeholder="Step size" value="${it.step_size || ''}" style="flex:1">
-            <input class="form-input" id="ci-cfg-unit-${s}" placeholder="Unit (min, hr…)" value="${it.step_unit || ''}" style="flex:1">
+            <input class="form-input" id="ci-cfg-step-${it.id}" type="number" placeholder="Step size" value="${it.step_size || ''}" style="flex:1">
+            <input class="form-input" id="ci-cfg-unit-${it.id}" placeholder="Unit (min, hr…)" value="${it.step_unit || ''}" style="flex:1">
           </div>
           <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem">
-            <input class="form-input" id="ci-cfg-tval-${s}" type="number" placeholder="Target" value="${it.target_value != null ? it.target_value : ''}" style="flex:1">
-            <select class="form-input" id="ci-cfg-tperiod-${s}" style="flex:1;background:#0f1117">
+            <input class="form-input" id="ci-cfg-tval-${it.id}" type="number" placeholder="Target" value="${it.target_value != null ? it.target_value : ''}" style="flex:1">
+            <select class="form-input" id="ci-cfg-tperiod-${it.id}" style="flex:1;background:#0f1117">
               <option value="">No period</option>
               <option value="daily"${it.target_period === 'daily' ? ' selected' : ''}>Daily</option>
               <option value="weekly"${it.target_period === 'weekly' ? ' selected' : ''}>Weekly</option>
@@ -367,16 +365,16 @@
             </select>
           </div>
           <div style="display:flex;gap:0.4rem">
-            <button class="ci-submit ci-cfg-save" data-id="${it.id}" data-slug="${s}" style="flex:1;margin-top:0;padding:8px;font-size:0.85rem">Save</button>
+            <button class="ci-submit ci-cfg-save" data-id="${it.id}" style="flex:1;margin-top:0;padding:8px;font-size:0.85rem">Save</button>
             <button class="ci-cfg-remove" data-id="${it.id}">Remove</button>
           </div>
-          <div class="ci-msg" id="ci-cfg-msg-${s}" style="font-size:0.82rem;margin-top:0.3rem"></div>
+          <div class="ci-msg" id="ci-cfg-msg-${it.id}" style="font-size:0.82rem;margin-top:0.3rem"></div>
         </div>`;
 
         return `<div class="ci-item">
-          <div class="ci-row" id="ci-row-${s}">
+          <div class="ci-row" id="ci-row-${it.id}">
             ${rowInner}
-            <button class="ci-cfg-btn" data-slug="${s}">⚙</button>
+            <button class="ci-cfg-btn" data-id="${it.id}">⚙</button>
           </div>
           ${cfgHtml}
         </div>`;
@@ -460,7 +458,7 @@
       // Wire config toggles
       document.querySelectorAll('.ci-cfg-btn').forEach(btn => {
         btn.onclick = () => {
-          const cfg = document.getElementById(`ci-cfg-${btn.dataset.slug}`);
+          const cfg = document.getElementById(`ci-cfg-${btn.dataset.id}`);
           if (cfg) cfg.classList.toggle('open');
         };
       });
@@ -468,8 +466,8 @@
       // Wire config type select → show/hide counter opts
       document.querySelectorAll('.ci-cfg-type').forEach(sel => {
         sel.onchange = () => {
-          const s = sel.dataset.slug;
-          const opts = document.querySelector(`#ci-cfg-${s} .ci-cfg-counter-opts`);
+          const id = sel.dataset.id;
+          const opts = document.querySelector(`#ci-cfg-${id} .ci-cfg-counter-opts`);
           if (opts) opts.style.display = sel.value === 'counter' ? 'flex' : 'none';
         };
       });
@@ -478,15 +476,16 @@
       document.querySelectorAll('.ci-cfg-save').forEach(btn => {
         btn.onclick = async () => {
           const id = btn.dataset.id;
-          const s = btn.dataset.slug;
-          const msg = document.getElementById(`ci-cfg-msg-${s}`);
+          const msg = document.getElementById(`ci-cfg-msg-${id}`);
+          const name = document.getElementById(`ci-cfg-name-${id}`)?.value?.trim();
           const body = {
-            input_type: document.querySelector(`#ci-cfg-${s} .ci-cfg-type`)?.value,
-            step_size: parseInt(document.getElementById(`ci-cfg-step-${s}`)?.value) || 0,
-            step_unit: document.getElementById(`ci-cfg-unit-${s}`)?.value || '',
+            input_type: document.querySelector(`#ci-cfg-${id} .ci-cfg-type`)?.value,
+            step_size: parseInt(document.getElementById(`ci-cfg-step-${id}`)?.value) || 0,
+            step_unit: document.getElementById(`ci-cfg-unit-${id}`)?.value || '',
           };
-          const tval = document.getElementById(`ci-cfg-tval-${s}`)?.value;
-          const tperiod = document.getElementById(`ci-cfg-tperiod-${s}`)?.value;
+          if (name) body.name = name;
+          const tval = document.getElementById(`ci-cfg-tval-${id}`)?.value;
+          const tperiod = document.getElementById(`ci-cfg-tperiod-${id}`)?.value;
           if (tval !== '') body.target_value = parseInt(tval) || 0;
           if (tperiod) body.target_period = tperiod;
           const res = await fetch(`/api/items/${id}`, {
@@ -518,7 +517,7 @@
           const isOn = toggle.classList.contains('on');
           toggle.classList.toggle('on');
           const note = isOn ? 'Undone' : 'Done';
-          const ind = document.getElementById(`ci-ind-${toggle.dataset.slug}`);
+          const ind = document.getElementById(`ci-ind-${toggle.dataset.id}`);
           pushLog(toggle.dataset.id, note);
           await autoSaveLog(toggle.dataset.id, note, ind);
         };
@@ -527,32 +526,35 @@
       // Wire counter buttons
       document.querySelectorAll('.ci-counter-btn').forEach(btn => {
         btn.onclick = async () => {
+          const id = btn.dataset.id;
           const step = parseInt(btn.dataset.step);
-          const s = btn.dataset.slug;
-          const valEl = document.getElementById(`ci-val-${s}`);
-          const ind = document.getElementById(`ci-ind-${s}`);
+          const valEl = document.getElementById(`ci-val-${id}`);
+          const ind = document.getElementById(`ci-ind-${id}`);
           const curRaw = parseInt(valEl.dataset.raw || '0');
           const next = Math.max(0, curRaw + step);
           if (next === curRaw && step < 0) return;
           valEl.dataset.raw = next;
           valEl.textContent = fmtCount(next, btn.dataset.unit);
-          pushLog(btn.dataset.id, String(step));
-          await autoSaveLog(btn.dataset.id, String(step), ind);
+          pushLog(id, String(step));
+          const progEl = document.getElementById(`ci-prog-${id}`);
+          const item = (window._items || []).find(it => it.id === parseInt(id));
+          if (progEl && item) progEl.textContent = periodProgress(item);
+          await autoSaveLog(id, String(step), ind);
         };
       });
 
       // Wire sliders — save on release
       const sliderTimers = {};
       document.querySelectorAll('.ci-slider-input').forEach(input => {
-        const s = input.dataset.slug;
-        const valEl = document.getElementById(`ci-slval-${s}`);
+        const id = input.dataset.id;
+        const valEl = document.getElementById(`ci-slval-${id}`);
         input.oninput = () => { if (valEl) valEl.textContent = input.value; };
         input.onchange = () => {
-          clearTimeout(sliderTimers[s]);
-          sliderTimers[s] = setTimeout(() => {
-            const ind = document.getElementById(`ci-ind-${s}`);
-            pushLog(input.dataset.id, input.value);
-            autoSaveLog(input.dataset.id, input.value, ind);
+          clearTimeout(sliderTimers[id]);
+          sliderTimers[id] = setTimeout(() => {
+            const ind = document.getElementById(`ci-ind-${id}`);
+            pushLog(id, input.value);
+            autoSaveLog(id, input.value, ind);
           }, 600);
         };
       });

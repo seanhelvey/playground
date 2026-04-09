@@ -174,6 +174,58 @@ func TestCounterPersistedOnReload(t *testing.T) {
 	}
 }
 
+// TestSliderItemPersistedOnReload proves that after logging a value for a slider
+// item via POST /api/items/{id}/log, fetching items returns that log entry — so
+// the slider re-renders at the saved value after a page reload.
+func TestSliderItemPersistedOnReload(t *testing.T) {
+	srv, cookie := newTestServer(t)
+	today := time.Now().Format("2006-01-02")
+
+	// Create a slider item
+	res, err := db.Exec(`INSERT INTO items (name, last_updated, input_type, range_min, range_max, display_order)
+		VALUES ('Mood', ?, 'slider', 1, 10, 99)`, today)
+	if err != nil {
+		t.Fatal(err)
+	}
+	moodID, _ := res.LastInsertId()
+	moodIDStr := strconv.FormatInt(moodID, 10)
+
+	// Log a value of 7
+	resp := apiReq(t, srv, cookie, "POST", "/api/items/"+moodIDStr+"/log", map[string]string{"note": "7"})
+	if resp.StatusCode != 200 {
+		t.Fatalf("log POST returned %d", resp.StatusCode)
+	}
+
+	// Simulate page reload
+	resp = apiReq(t, srv, cookie, "GET", "/api/items", nil)
+	var items []Item
+	json.NewDecoder(resp.Body).Decode(&items)
+
+	var mood *Item
+	for i := range items {
+		if items[i].Name == "Mood" {
+			mood = &items[i]
+		}
+	}
+	if mood == nil {
+		t.Fatal("Mood not found in items")
+	}
+
+	var todayLog *LogEntry
+	for i := range mood.Log {
+		if mood.Log[i].Date == today {
+			todayLog = &mood.Log[i]
+			break
+		}
+	}
+	if todayLog == nil {
+		t.Fatal("no log entry for today — slider would reset to default after reload")
+	}
+	if todayLog.Note != "7" {
+		t.Fatalf("expected note '7', got %q — slider would show wrong value after reload", todayLog.Note)
+	}
+}
+
 // TestSlidersPersistedOnReload proves that body/mind/social values saved via
 // POST /api/checkins are returned by GET /api/checkins for today, and would
 // appear in the activity log data (same data used to render Recent Activity).
