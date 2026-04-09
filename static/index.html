@@ -425,7 +425,7 @@
     /* ── Version ── */
     fetch('/api/health').then(r => r.json()).then(h => {
       const el = document.getElementById('version-footer');
-      if (el && h.sha) el.textContent = h.sha;
+      if (el && h.sha) el.textContent = h.sha.slice(0, 7);
     }).catch(() => {});
 
     /* ── Load ── */

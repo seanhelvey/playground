@@ -128,7 +128,10 @@ func migrateAlter(db *sql.DB) error {
 	// Mark completed items
 	db.Exec("UPDATE items SET completed_date = '2026-04-07' WHERE name = 'Deploy a full-stack project' AND completed_date IS NULL")
 
-	// Insert new items (idempotent)
+	// Remove any duplicates created before name-uniqueness was enforced (keep lowest id per name)
+	db.Exec(`DELETE FROM items WHERE id NOT IN (SELECT MIN(id) FROM items GROUP BY name)`)
+
+	// Insert new items — check by name since name is not a unique constraint
 	type newItem struct {
 		name, inputType, stepUnit string
 		stepSize, order, rangeMin, rangeMax int
@@ -148,9 +151,9 @@ func migrateAlter(db *sql.DB) error {
 	}
 	for _, it := range inserts {
 		db.Exec(
-			`INSERT OR IGNORE INTO items (name, last_updated, input_type, step_size, step_unit, display_order, range_min, range_max, target_value, target_period, active)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-			it.name, today, it.inputType, it.stepSize, it.stepUnit, it.order, it.rangeMin, it.rangeMax, it.targetValue, it.targetPeriod,
+			`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, range_min, range_max, target_value, target_period, active)
+			 SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1 WHERE NOT EXISTS (SELECT 1 FROM items WHERE name = ?)`,
+			it.name, today, it.inputType, it.stepSize, it.stepUnit, it.order, it.rangeMin, it.rangeMax, it.targetValue, it.targetPeriod, it.name,
 		)
 	}
 
