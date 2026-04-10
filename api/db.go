@@ -157,32 +157,6 @@ func migrateAlter(db *sql.DB) error {
 		)
 	}
 
-	// Update config for existing items
-	type itemConfig struct {
-		name, inputType, stepUnit, targetPeriod string
-		stepSize, order, targetValue            int
-	}
-	updates := []itemConfig{
-		{"Wake to alarm", "boolean", "", "daily", 0, 1, 1},
-		{"Meditation", "counter", "min", "weekly", 5, 2, 35},
-		{"DM a friend", "boolean", "", "daily", 0, 3, 1},
-		{"Fast after dinner", "boolean", "", "daily", 0, 4, 1},
-		{"Dancing", "counter", "min", "weekly", 15, 11, 120},
-		{"Music", "counter", "min", "weekly", 15, 12, 120},
-		{"Fishing", "counter", "min", "monthly", 30, 10, 120},
-		{"Gardening", "counter", "min", "monthly", 30, 9, 120},
-		{"Plant ID", "counter", "species", "daily", 1, 8, 1},
-		{"Own a home", "counter", "hr", "monthly", 1, 13, 2},
-		{"Build fallback income", "counter", "hr", "monthly", 1, 14, 2},
-		{"Contribute to non-Django OSS", "counter", "hr", "monthly", 1, 16, 2},
-	}
-	for _, u := range updates {
-		db.Exec(
-			"UPDATE items SET input_type=?, step_size=?, step_unit=?, display_order=?, target_value=?, target_period=? WHERE name=?",
-			u.inputType, u.stepSize, u.stepUnit, u.order, u.targetValue, u.targetPeriod, u.name,
-		)
-	}
-
 	return nil
 }
 

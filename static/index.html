@@ -568,7 +568,7 @@
     function renderActivityLog(items, checkins, limit) {
       const PAGE = limit || 20;
       const all = [];
-      items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note, isCheckin: false })));
+      items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note, type: l.type, isCheckin: false })));
       (checkins || []).forEach(c => {
         if (c.body != null || c.mind != null || c.social != null) {
           const note = [`body:${c.body}`, `mind:${c.mind}`, `social:${c.social}`].filter(s => !s.endsWith('null')).join(' ');
@@ -590,7 +590,10 @@
       all.slice(0, PAGE).forEach(e => {
         const div = document.createElement('div');
         div.className = 'al-entry';
-        div.innerHTML = `<span class="al-date">${e.date}</span><span class="al-item">${e.item}</span><span class="al-note">${e.note}</span>`;
+        const isConfig = e.type === 'config';
+        const noteStyle = isConfig ? ' style="color:#555b66;font-style:italic"' : '';
+        const itemStyle = isConfig ? ' style="color:#555b66"' : '';
+        div.innerHTML = `<span class="al-date">${e.date}</span><span class="al-item"${itemStyle}>${e.item}</span><span class="al-note"${noteStyle}>${isConfig ? '⚙ ' : ''}${e.note}</span>`;
         container.appendChild(div);
       });
 

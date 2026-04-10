@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -144,34 +146,83 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", 400)
 		return
 	}
+
+	// Read current values to detect changes for logging.
+	var curName, curInputType string
+	db.QueryRow("SELECT name, input_type FROM items WHERE id = ?", id).Scan(&curName, &curInputType)
+
 	today := time.Now().Format("2006-01-02")
+
+	exec := func(query string, args ...any) bool {
+		if _, err := db.Exec(query, args...); err != nil {
+			log.Printf("handleUpdateItem: %v", err)
+			http.Error(w, "db error", 500)
+			return false
+		}
+		return true
+	}
+
 	if update.Name != nil {
-		db.Exec("UPDATE items SET name = ?, last_updated = ? WHERE id = ?", *update.Name, today, id)
+		if !exec("UPDATE items SET name = ?, last_updated = ? WHERE id = ?", *update.Name, today, id) {
+			return
+		}
 	}
 	if update.InputType != nil {
-		db.Exec("UPDATE items SET input_type = ?, last_updated = ? WHERE id = ?", *update.InputType, today, id)
+		if !exec("UPDATE items SET input_type = ?, last_updated = ? WHERE id = ?", *update.InputType, today, id) {
+			return
+		}
 	}
 	if update.StepSize != nil {
-		db.Exec("UPDATE items SET step_size = ?, last_updated = ? WHERE id = ?", *update.StepSize, today, id)
+		if !exec("UPDATE items SET step_size = ?, last_updated = ? WHERE id = ?", *update.StepSize, today, id) {
+			return
+		}
 	}
 	if update.StepUnit != nil {
-		db.Exec("UPDATE items SET step_unit = ?, last_updated = ? WHERE id = ?", *update.StepUnit, today, id)
+		if !exec("UPDATE items SET step_unit = ?, last_updated = ? WHERE id = ?", *update.StepUnit, today, id) {
+			return
+		}
 	}
 	if update.CompletedDate != nil {
-		db.Exec("UPDATE items SET completed_date = ?, last_updated = ? WHERE id = ?", *update.CompletedDate, today, id)
+		if !exec("UPDATE items SET completed_date = ?, last_updated = ? WHERE id = ?", *update.CompletedDate, today, id) {
+			return
+		}
 	}
 	if update.Active != nil {
-		db.Exec("UPDATE items SET active = ?, last_updated = ? WHERE id = ?", *update.Active, today, id)
+		if !exec("UPDATE items SET active = ?, last_updated = ? WHERE id = ?", *update.Active, today, id) {
+			return
+		}
 	}
 	if update.TargetValue != nil {
-		db.Exec("UPDATE items SET target_value = ?, last_updated = ? WHERE id = ?", *update.TargetValue, today, id)
+		if !exec("UPDATE items SET target_value = ?, last_updated = ? WHERE id = ?", *update.TargetValue, today, id) {
+			return
+		}
 	}
 	if update.TargetPeriod != nil {
-		db.Exec("UPDATE items SET target_period = ?, last_updated = ? WHERE id = ?", *update.TargetPeriod, today, id)
+		if !exec("UPDATE items SET target_period = ?, last_updated = ? WHERE id = ?", *update.TargetPeriod, today, id) {
+			return
+		}
 	}
 	if update.DisplayOrder != nil {
-		db.Exec("UPDATE items SET display_order = ? WHERE id = ?", *update.DisplayOrder, id)
+		if !exec("UPDATE items SET display_order = ? WHERE id = ?", *update.DisplayOrder, id) {
+			return
+		}
 	}
+
+	// Log notable config changes.
+	var parts []string
+	if update.Name != nil && *update.Name != curName {
+		parts = append(parts, fmt.Sprintf("name: %s→%s", curName, *update.Name))
+	}
+	if update.InputType != nil && *update.InputType != curInputType {
+		parts = append(parts, fmt.Sprintf("input_type: %s→%s", curInputType, *update.InputType))
+	}
+	if update.Active != nil && *update.Active == 0 {
+		parts = append(parts, "removed")
+	}
+	if len(parts) > 0 {
+		db.Exec("INSERT INTO logs (item_id, date, type, note) VALUES (?, ?, 'config', ?)", id, today, strings.Join(parts, ", "))
+	}
+
 	writeJSON(w, map[string]string{"status": "updated"})
 }
 
