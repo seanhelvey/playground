@@ -290,37 +290,6 @@ func handleAddCheckin(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{"status": "saved"})
 }
 
-// Wins
-
-type Win struct {
-	ID   int    `json:"id"`
-	Date string `json:"date"`
-	Note string `json:"note"`
-}
-
-func handleGetWins(w http.ResponseWriter, r *http.Request) {
-	rows, _ := db.Query("SELECT id, date, note FROM wins ORDER BY date DESC")
-	defer rows.Close()
-	wins := []Win{}
-	for rows.Next() {
-		var w Win
-		rows.Scan(&w.ID, &w.Date, &w.Note)
-		wins = append(wins, w)
-	}
-	writeJSON(w, wins)
-}
-
-func handleAddWin(w http.ResponseWriter, r *http.Request) {
-	var win Win
-	if err := json.NewDecoder(r.Body).Decode(&win); err != nil {
-		http.Error(w, "bad request", 400)
-		return
-	}
-	win.Date = time.Now().Format("2006-01-02")
-	db.Exec("INSERT INTO wins (date, note) VALUES (?, ?)", win.Date, win.Note)
-	writeJSON(w, map[string]string{"status": "saved"})
-}
-
 // Tasks
 
 type Task struct {

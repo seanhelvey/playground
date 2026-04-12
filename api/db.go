@@ -49,12 +49,6 @@ func migrate(db *sql.DB) error {
 			less_of TEXT
 		);
 
-		CREATE TABLE IF NOT EXISTS wins (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			date TEXT NOT NULL,
-			note TEXT NOT NULL
-		);
-
 		CREATE TABLE IF NOT EXISTS tasks (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			task TEXT NOT NULL,

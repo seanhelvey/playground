@@ -57,8 +57,6 @@ func main() {
 	api.HandleFunc("PATCH /api/items/{id}", handleUpdateItem)
 	api.HandleFunc("GET /api/checkins", handleGetCheckins)
 	api.HandleFunc("POST /api/checkins", handleAddCheckin)
-	api.HandleFunc("GET /api/wins", handleGetWins)
-	api.HandleFunc("POST /api/wins", handleAddWin)
 	api.HandleFunc("GET /api/tasks", handleGetTasks)
 	api.HandleFunc("POST /api/tasks", handleAddTask)
 	api.HandleFunc("DELETE /api/tasks/{id}", handleDeleteTask)
