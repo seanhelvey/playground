@@ -36,15 +36,6 @@ func main() {
 		log.Fatal("migration failed:", err)
 	}
 
-	// Seed from data.json if DB is empty
-	seedPath := os.Getenv("SEED_PATH")
-	if seedPath == "" {
-		seedPath = "../data.json"
-	}
-	if err := seedFromJSON(db, seedPath); err != nil {
-		log.Printf("seed: %v (may be fine if already seeded)", err)
-	}
-
 	// Rate limit: 10 attempts per minute on auth endpoints
 	authLimiter := newRateLimiter(10, time.Minute)
 
