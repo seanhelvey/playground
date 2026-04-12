@@ -415,7 +415,7 @@
             <option value="slider"${it.input_type === 'slider' ? ' selected' : ''}>Slider (range)</option>
           </select>
           <div class="ci-cfg-counter-opts" style="display:${isCounter ? 'flex' : 'none'};gap:0.4rem;margin-bottom:0.4rem">
-            <input class="form-input" id="ci-cfg-step-${it.id}" type="number" placeholder="Step size" value="${it.step_size || ''}" style="flex:1">
+            <input class="form-input" id="ci-cfg-step-${it.id}" type="number" placeholder="Step size" value="${it.step_size || 1}" style="flex:1">
             <input class="form-input" id="ci-cfg-unit-${it.id}" placeholder="Unit (min, hr…)" value="${it.step_unit || ''}" style="flex:1">
           </div>
           <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem">
@@ -469,7 +469,7 @@
             <option value="ongoing">Ongoing</option>
           </select>
           <div id="new-item-counter-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
-            <input class="form-input" id="new-item-step" type="number" placeholder="Step size" style="width:49%;display:inline-block">
+            <input class="form-input" id="new-item-step" type="number" placeholder="1" style="width:49%;display:inline-block">
             <input class="form-input" id="new-item-unit" placeholder="Unit (min, species…)" style="width:49%;display:inline-block">
           </div>
           <div id="new-item-slider-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
@@ -497,7 +497,7 @@
           name,
           input_type: typeSelect.value,
           cadence: document.getElementById('new-item-cadence').value,
-          step_size: parseInt(document.getElementById('new-item-step')?.value) || 0,
+          step_size: parseInt(document.getElementById('new-item-step')?.value) || 1,
           step_unit: document.getElementById('new-item-unit')?.value || '',
           range_min: parseInt(document.getElementById('new-item-rmin')?.value) || 1,
           range_max: parseInt(document.getElementById('new-item-rmax')?.value) || 10,
@@ -703,6 +703,9 @@
         const btn = document.getElementById('ci-edit-btn');
         btn.textContent = window._editMode ? 'Done' : 'Edit';
         btn.classList.toggle('active', window._editMode);
+        if (!window._editMode) {
+          document.querySelectorAll('.ci-cfg.open').forEach(el => el.classList.remove('open'));
+        }
       };
     }).catch(err => {
       if (err.message === 'unauthorized') showLogin();
