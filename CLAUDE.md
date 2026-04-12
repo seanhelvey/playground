@@ -23,6 +23,20 @@ Ask. Wait. Then act.
 
 ---
 
+## Engineering rules
+
+These exist because each one burned us.
+
+- **Wire it or don't write it.** Every new column, endpoint, or JS function must be traceable to something that calls or renders it. If you can't show the full path (UI action → API → DB, or DB column → API response → UI render), don't add it.
+- **Migrations are schema-only.** `migrate()` touches table structure only — `CREATE TABLE`, `ALTER TABLE`. Never put `INSERT`, `UPDATE`, or `DELETE` of row data in migration code. One-off data changes go through the API or a manual query, then get removed. User data lives in the DB and is managed through the UI.
+- **Handle every error at the boundary.** Every `db.Exec` in a handler must check its error. On failure: log it, return 4xx/5xx, stop. Never return a success response if a write failed. A UI save confirmation is only trustworthy if the server actually confirmed it.
+- **Mutable data is never identity.** Before writing any dedup, lookup, or sort, ask: what happens when this value changes? Names change. Timestamps drift. IDs from different autoincrement sequences don't compare. Use stable IDs.
+- **Dates come from the client.** The server clock is UTC. For anything user-facing, accept the date in the request body (validated as `YYYY-MM-DD`); fall back to server time only when absent.
+- **Closing a mode cleans up its children.** When UI state changes (edit mode off, panel closed), explicitly reset all sub-state that mode owned — open menus, pending inputs, selections.
+- **When fixing a bug, scan for the same pattern.** One bug usually has siblings. Grep for the anti-pattern across the codebase before closing the issue.
+
+---
+
 ## Git
 
 - Push directly to `main`, no branches.
@@ -36,7 +50,7 @@ go mod tidy
 go run .
 ```
 
-Open `http://localhost:8080`. The server seeds SQLite from `data.json` on first run and serves the PWA from `static/`.
+Open `http://localhost:8080`. The server serves the PWA from `static/`.
 
 ## Deploy
 
@@ -114,8 +128,6 @@ Two channels, not connected yet:
 
 1. **App (PWA)** — user logs activity, records wins, does weekly check-in. Data goes to SQLite via API. **Source of truth for all user data.**
 2. **Claude Code (iOS)** — separate tool for system improvement: reviewing issues, making code changes, discussing what to build next.
-
-`data.json` is a one-time seed file. Once the DB is seeded it is never read again.
 
 ---
 
