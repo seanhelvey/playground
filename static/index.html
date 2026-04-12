@@ -516,9 +516,9 @@
       function pushLog(itemId, note) {
         const item = (window._items || []).find(it => it.id === parseInt(itemId));
         if (item) {
-          if (!item.log) item.log = [];
-          item.log.unshift({ id: Date.now(), date: today, note });
-          renderActivityLog(window._items, window._checkins || []);
+          const entry = { id: Date.now(), date: today, item_name: item.name, note };
+          window._logs = [entry, ...(window._logs || [])];
+          renderActivityLog(window._logs, window._checkins || []);
         }
       }
 
@@ -637,10 +637,10 @@
     }
 
     /* ── Activity log ── */
-    function renderActivityLog(items, checkins, limit) {
+    function renderActivityLog(logs, checkins, limit) {
       const PAGE = limit || 20;
       const all = [];
-      items.forEach(it => (it.log || []).forEach(l => all.push({ id: l.id, date: l.date, item: it.name, note: l.note, type: l.type, isCheckin: false })));
+      (logs || []).forEach(l => all.push({ id: l.id, date: l.date, item: l.item_name, note: l.note, type: l.type, isCheckin: false }));
       (checkins || []).forEach(c => {
         if (c.body != null || c.mind != null || c.social != null) {
           const note = [`body:${c.body}`, `mind:${c.mind}`, `social:${c.social}`].filter(s => !s.endsWith('null')).join(' ');
@@ -673,7 +673,7 @@
         const btn = document.createElement('button');
         btn.className = 'al-more';
         btn.textContent = `Show more (${all.length - PAGE} remaining)`;
-        btn.onclick = () => renderActivityLog(items, checkins, PAGE + 20);
+        btn.onclick = () => renderActivityLog(logs, checkins, PAGE + 20);
         container.appendChild(btn);
       }
     }
@@ -687,16 +687,18 @@
     /* ── Load ── */
     Promise.all([
       fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); }),
-      fetch('/api/checkins').then(r => r.ok ? r.json() : [])
-    ]).then(([items, checkins]) => {
+      fetch('/api/checkins').then(r => r.ok ? r.json() : []),
+      fetch('/api/logs').then(r => r.ok ? r.json() : [])
+    ]).then(([items, checkins, logs]) => {
       items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
       window._items = items;
       window._checkins = checkins;
+      window._logs = logs;
       const todayCheckin = checkins.find(c => c.date === today) || null;
       window._todayCheckin = todayCheckin;
       window._editMode = false;
       renderCheckinSection(items, todayCheckin);
-      renderActivityLog(items, checkins);
+      renderActivityLog(logs, checkins);
       document.getElementById('ci-edit-btn').onclick = () => {
         window._editMode = !window._editMode;
         document.getElementById('checkin-section').classList.toggle('edit-mode', window._editMode);

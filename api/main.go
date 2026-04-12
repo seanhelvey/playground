@@ -62,6 +62,7 @@ func main() {
 	api.HandleFunc("GET /api/tasks", handleGetTasks)
 	api.HandleFunc("POST /api/tasks", handleAddTask)
 	api.HandleFunc("DELETE /api/tasks/{id}", handleDeleteTask)
+	api.HandleFunc("GET /api/logs", handleGetLogs)
 	mux.Handle("/api/", authMiddleware(api))
 
 	// Serve static files (PWA) — no auth, the app shell loads for everyone

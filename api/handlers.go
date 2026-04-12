@@ -358,3 +358,37 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	db.Exec("DELETE FROM tasks WHERE id = ?", id)
 	writeJSON(w, map[string]string{"status": "deleted"})
 }
+
+// Logs feed
+
+type LogFeedEntry struct {
+	ID       int     `json:"id"`
+	Date     string  `json:"date"`
+	ItemID   int     `json:"item_id"`
+	ItemName string  `json:"item_name"`
+	Type     *string `json:"type,omitempty"`
+	Note     string  `json:"note"`
+}
+
+func handleGetLogs(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query(`
+		SELECT l.id, l.date, l.item_id, i.name, l.type, l.note
+		FROM logs l
+		JOIN items i ON l.item_id = i.id
+		ORDER BY l.id DESC
+		LIMIT 200
+	`)
+	if err != nil {
+		log.Printf("error getting logs: %v", err)
+		http.Error(w, "internal error", 500)
+		return
+	}
+	defer rows.Close()
+	entries := []LogFeedEntry{}
+	for rows.Next() {
+		var e LogFeedEntry
+		rows.Scan(&e.ID, &e.Date, &e.ItemID, &e.ItemName, &e.Type, &e.Note)
+		entries = append(entries, e)
+	}
+	writeJSON(w, entries)
+}
