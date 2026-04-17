@@ -20,7 +20,14 @@ func migrate(db *sql.DB) error {
 			target_period TEXT,
 			range_min INTEGER NOT NULL DEFAULT 1,
 			range_max INTEGER NOT NULL DEFAULT 10,
-			completed_date TEXT
+			completed_date TEXT,
+			group_id INTEGER
+		);
+
+		CREATE TABLE IF NOT EXISTS groups (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			display_order INTEGER NOT NULL DEFAULT 99
 		);
 
 		CREATE TABLE IF NOT EXISTS logs (
@@ -98,6 +105,7 @@ func migrateAlter(db *sql.DB) error {
 		"ALTER TABLE items ADD COLUMN range_min INTEGER NOT NULL DEFAULT 1",
 		"ALTER TABLE items ADD COLUMN range_max INTEGER NOT NULL DEFAULT 10",
 		"ALTER TABLE items ADD COLUMN completed_date TEXT",
+		"ALTER TABLE items ADD COLUMN group_id INTEGER",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {

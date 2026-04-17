@@ -25,6 +25,7 @@ type Item struct {
 	TargetPeriod  *string    `json:"target_period,omitempty"`
 	DisplayOrder  int        `json:"display_order"`
 	CompletedDate *string    `json:"completed_date,omitempty"`
+	GroupID       *int       `json:"group_id,omitempty"`
 	Log           []LogEntry `json:"log"`
 }
 
@@ -36,7 +37,7 @@ type LogEntry struct {
 }
 
 func handleGetItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE active = 1 ORDER BY display_order, name")
+	rows, err := db.Query("SELECT id, name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date, group_id FROM items WHERE active = 1 ORDER BY display_order, name")
 	if err != nil {
 		log.Printf("error getting items: %v", err)
 		http.Error(w, "internal error", 500)
@@ -47,7 +48,7 @@ func handleGetItems(w http.ResponseWriter, r *http.Request) {
 	items := []Item{}
 	for rows.Next() {
 		var it Item
-		rows.Scan(&it.ID, &it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
+		rows.Scan(&it.ID, &it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate, &it.GroupID)
 
 		it.Log = []LogEntry{}
 		if logRows, err := db.Query("SELECT id, date, type, note FROM logs WHERE item_id = ? ORDER BY id DESC", it.ID); err == nil {
@@ -107,8 +108,8 @@ func handleGetItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var it Item
-	err = db.QueryRow("SELECT id, name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date FROM items WHERE id = ? AND active = 1", id).
-		Scan(&it.ID, &it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate)
+	err = db.QueryRow("SELECT id, name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, display_order, completed_date, group_id FROM items WHERE id = ? AND active = 1", id).
+		Scan(&it.ID, &it.Name, &it.LastUpdated, &it.InputType, &it.StepSize, &it.StepUnit, &it.RangeMin, &it.RangeMax, &it.TargetValue, &it.TargetPeriod, &it.DisplayOrder, &it.CompletedDate, &it.GroupID)
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return
@@ -141,6 +142,7 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		TargetValue   *int    `json:"target_value"`
 		TargetPeriod  *string `json:"target_period"`
 		DisplayOrder  *int    `json:"display_order"`
+		GroupID       *int    `json:"group_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 		http.Error(w, "bad request", 400)
@@ -205,6 +207,17 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	if update.DisplayOrder != nil {
 		if !exec("UPDATE items SET display_order = ? WHERE id = ?", *update.DisplayOrder, id) {
 			return
+		}
+	}
+	if update.GroupID != nil {
+		if *update.GroupID == 0 {
+			if !exec("UPDATE items SET group_id = NULL WHERE id = ?", id) {
+				return
+			}
+		} else {
+			if !exec("UPDATE items SET group_id = ? WHERE id = ?", *update.GroupID, id) {
+				return
+			}
 		}
 	}
 
@@ -337,6 +350,98 @@ type LogFeedEntry struct {
 	ItemName string  `json:"item_name"`
 	Type     *string `json:"type,omitempty"`
 	Note     string  `json:"note"`
+}
+
+// Groups
+
+type Group struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	DisplayOrder int    `json:"display_order"`
+}
+
+func handleGetGroups(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT id, name, display_order FROM groups ORDER BY display_order, name")
+	if err != nil {
+		log.Printf("error getting groups: %v", err)
+		http.Error(w, "internal error", 500)
+		return
+	}
+	defer rows.Close()
+	groups := []Group{}
+	for rows.Next() {
+		var g Group
+		rows.Scan(&g.ID, &g.Name, &g.DisplayOrder)
+		groups = append(groups, g)
+	}
+	writeJSON(w, groups)
+}
+
+func handleCreateGroup(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
+		http.Error(w, "bad request", 400)
+		return
+	}
+	_, err := db.Exec("INSERT INTO groups (name, display_order) VALUES (?, 99)", req.Name)
+	if err != nil {
+		log.Printf("error creating group: %v", err)
+		http.Error(w, "db error", 500)
+		return
+	}
+	writeJSON(w, map[string]string{"status": "created"})
+}
+
+func handleUpdateGroup(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "bad id", 400)
+		return
+	}
+	var req struct {
+		Name         *string `json:"name"`
+		DisplayOrder *int    `json:"display_order"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", 400)
+		return
+	}
+	if req.Name != nil {
+		if _, err := db.Exec("UPDATE groups SET name = ? WHERE id = ?", *req.Name, id); err != nil {
+			log.Printf("error updating group: %v", err)
+			http.Error(w, "db error", 500)
+			return
+		}
+	}
+	if req.DisplayOrder != nil {
+		if _, err := db.Exec("UPDATE groups SET display_order = ? WHERE id = ?", *req.DisplayOrder, id); err != nil {
+			log.Printf("error updating group order: %v", err)
+			http.Error(w, "db error", 500)
+			return
+		}
+	}
+	writeJSON(w, map[string]string{"status": "updated"})
+}
+
+func handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "bad id", 400)
+		return
+	}
+	if _, err := db.Exec("UPDATE items SET group_id = NULL WHERE group_id = ?", id); err != nil {
+		log.Printf("error ungrouping items: %v", err)
+		http.Error(w, "db error", 500)
+		return
+	}
+	if _, err := db.Exec("DELETE FROM groups WHERE id = ?", id); err != nil {
+		log.Printf("error deleting group: %v", err)
+		http.Error(w, "db error", 500)
+		return
+	}
+	writeJSON(w, map[string]string{"status": "deleted"})
 }
 
 func handleGetLogs(w http.ResponseWriter, r *http.Request) {
