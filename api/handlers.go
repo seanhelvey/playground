@@ -151,7 +151,8 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 
 	// Read current values to detect changes for logging.
 	var curName, curInputType string
-	db.QueryRow("SELECT name, input_type FROM items WHERE id = ?", id).Scan(&curName, &curInputType)
+	var curGroupID *int
+	db.QueryRow("SELECT name, input_type, group_id FROM items WHERE id = ?", id).Scan(&curName, &curInputType, &curGroupID)
 
 	today := time.Now().Format("2006-01-02")
 
@@ -231,6 +232,23 @@ func handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if update.Active != nil && *update.Active == 0 {
 		parts = append(parts, "removed")
+	}
+	if update.GroupID != nil {
+		oldID := 0
+		if curGroupID != nil {
+			oldID = *curGroupID
+		}
+		if oldID != *update.GroupID {
+			oldName := "(none)"
+			if curGroupID != nil {
+				db.QueryRow("SELECT name FROM groups WHERE id = ?", *curGroupID).Scan(&oldName)
+			}
+			newName := "(none)"
+			if *update.GroupID > 0 {
+				db.QueryRow("SELECT name FROM groups WHERE id = ?", *update.GroupID).Scan(&newName)
+			}
+			parts = append(parts, fmt.Sprintf("group: %s→%s", oldName, newName))
+		}
 	}
 	if len(parts) > 0 {
 		db.Exec("INSERT INTO logs (item_id, date, type, note) VALUES (?, ?, 'config', ?)", id, today, strings.Join(parts, ", "))

@@ -88,8 +88,19 @@ Each item is a single unified shape — no type distinction between a daily habi
 | `active` | `INTEGER` | 0 = soft deleted |
 | `completed_date` | `TEXT` | Set when permanently done; null = ongoing |
 | `last_updated` | `TEXT` | ISO date of last log |
+| `group_id` | `INTEGER` | FK to `groups.id`; null = ungrouped |
 
 Progress = net sum of log entries in current period window. Handles thrashing correctly (+5+5−5 = 5).
+
+### Groups
+
+User-defined clusters for habit stacking and time-of-day organization. Rendered as pill tabs and card sections in the UI.
+
+| Column | Notes |
+|---|---|
+| `id` | PK |
+| `name` | Display label (Morning, Evening, etc.) |
+| `display_order` | Sort order for tabs |
 
 ### Logs
 
