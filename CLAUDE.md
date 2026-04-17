@@ -34,6 +34,7 @@ These exist because each one burned us.
 - **Dates come from the client.** The server clock is UTC. For anything user-facing, accept the date in the request body (validated as `YYYY-MM-DD`); fall back to server time only when absent.
 - **Closing a mode cleans up its children.** When UI state changes (edit mode off, panel closed), explicitly reset all sub-state that mode owned — open menus, pending inputs, selections.
 - **When fixing a bug, scan for the same pattern.** One bug usually has siblings. Grep for the anti-pattern across the codebase before closing the issue.
+- **After any structural HTML/CSS change, manually verify edit mode.** Restructuring the DOM (e.g. changing which element holds a class) silently breaks CSS selectors. Check that edit mode shows reorder buttons and hides interactive controls before shipping.
 
 ---
 
