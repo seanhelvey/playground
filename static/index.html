@@ -526,7 +526,7 @@
         gItems.forEach(it => { html += renderItem(it); });
       });
       const hasGroupedContent = sortedGroups.some(g => (grouped[g.id] || []).length > 0);
-      if (ungrouped.length && hasGroupedContent) html += `<div style="border-top:1px solid #2a2d3a;margin-top:0.25rem"></div>`;
+      if (ungrouped.length && hasGroupedContent) html += `<div style="border-top:1px solid #3a3d4d;margin:0.5rem 0 0.25rem"></div>`;
       ungrouped.forEach(it => { html += renderItem(it); });
 
       // Add item form
