@@ -15,7 +15,7 @@ Ask. Wait. Then act.
 ## Working with Claude
 
 - **Say "I don't know" instead of guessing.** If the root cause isn't proven, say so.
-- **Maintain a small integration test suite.** A handful of high-level tests covering critical paths. New tests only when an existing one doesn't cover it.
+- **Maintain a small integration test suite.** A handful of high-level tests covering critical paths only — auth, item CRUD, logging. Do not add a test for every feature. Add one only when no existing test covers the path. Delete tests that duplicate coverage. Keep the suite fast and readable.
 - **Track work in GitHub Issues.** Every bug or feature should have an issue. Reference it in commits.
 - **Don't make unrequested changes.** Fix what was asked, nothing more.
 - **Names are NOT primary keys.** The `items` table must use `id INTEGER PRIMARY KEY AUTOINCREMENT`. Name is a mutable user-facing label — `TEXT NOT NULL`, no uniqueness constraint. `id` is identity. Never constrain mutable fields for uniqueness; that breaks when users rename things.
