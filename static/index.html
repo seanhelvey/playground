@@ -167,7 +167,7 @@
       touch-action: manipulation;
     }
     .ci-cfg-btn:hover { color: #bcc3cd; }
-    .ci-section.edit-mode .ci-cfg-btn { display: inline-block; }
+    #checkin-section.edit-mode .ci-cfg-btn { display: inline-block; }
 
     /* ── Section header + edit toggle ── */
     .ci-section-hdr { display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 0.6rem; }
@@ -181,7 +181,7 @@
 
     /* ── Reorder ── */
     .ci-reorder { display: none; align-items: center; gap: 0.25rem; flex-shrink: 0; }
-    .ci-section.edit-mode .ci-reorder { display: flex; }
+    #checkin-section.edit-mode .ci-reorder { display: flex; }
     .ci-reorder-btn {
       width: 28px; height: 28px; border-radius: 50%; border: 1px solid #2a2d3a;
       background: #1a1d27; color: #bcc3cd; font-size: 0.75rem; cursor: pointer;
@@ -192,8 +192,8 @@
 
     /* ── Interactive control wrapper ── */
     .ci-interactive { display: flex; align-items: center; flex-shrink: 0; }
-    .ci-section.edit-mode .ci-interactive { display: none; }
-    .ci-section.edit-mode .ci-indicator { display: none; }
+    #checkin-section.edit-mode .ci-interactive { display: none; }
+    #checkin-section.edit-mode .ci-indicator { display: none; }
     .ci-cfg {
       display: none; padding: 0.6rem 0 0.5rem;
       border-top: 1px solid #1e2130;
