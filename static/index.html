@@ -116,10 +116,8 @@
     .ci-group { margin-bottom: 0.25rem; }
     .ci-group-header {
       font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.1em; color: #a78bfa; padding: 0.6rem 0 0.2rem;
-      border-top: 1px solid #2a2d3a; margin-top: 0.25rem;
+      letter-spacing: 0.1em; color: #a78bfa; padding: 0.75rem 0 0.25rem;
     }
-    .ci-group .ci-row { padding-left: 0.5rem; }
 
     /* Note items — always visible input */
     .ci-note-inline {
@@ -254,7 +252,7 @@
     <button id="ci-edit-btn" class="ci-edit-toggle">Edit</button>
   </div>
   <div id="group-tabs"></div>
-  <div class="ci-section" id="checkin-section"></div>
+  <div id="checkin-section"></div>
 
   <h2 style="margin-top:2.5rem">Recent Activity</h2>
   <div id="activity-log"></div>
@@ -522,12 +520,15 @@
       sortedGroups.forEach(g => {
         const gItems = grouped[g.id] || [];
         if (!gItems.length) return;
-        html += `<div class="ci-group-header">${g.name}</div>`;
+        html += `<div class="ci-group-header">${g.name}</div><div class="ci-section">`;
         gItems.forEach(it => { html += renderItem(it); });
+        html += `</div>`;
       });
-      const hasGroupedContent = sortedGroups.some(g => (grouped[g.id] || []).length > 0);
-      if (ungrouped.length && hasGroupedContent) html += `<div style="border-top:1px solid #3a3d4d;margin:0.5rem 0 0.25rem"></div>`;
-      ungrouped.forEach(it => { html += renderItem(it); });
+      if (ungrouped.length) {
+        html += `<div class="ci-section">`;
+        ungrouped.forEach(it => { html += renderItem(it); });
+        html += `</div>`;
+      }
 
       // Add item form
       html += `<div class="ci-extra" id="add-item-section" style="margin-top:0.75rem">
