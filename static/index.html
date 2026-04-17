@@ -101,6 +101,17 @@
     .ci-slider-row { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.25rem 0.6rem; }
     .ci-slider-row .ci-slider-input { flex: 1; }
 
+    /* Group filter tabs */
+    #group-tabs { display: none; gap: 0.5rem; overflow-x: auto; padding: 0.5rem 0 0.25rem; scrollbar-width: none; }
+    #group-tabs::-webkit-scrollbar { display: none; }
+    .group-tab {
+      padding: 6px 16px; border-radius: 20px; border: 1px solid #2a2d3a;
+      background: #1a1d27; color: #c4cbd5; font-size: 0.85rem;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      touch-action: manipulation;
+    }
+    .group-tab.active { background: #a78bfa; border-color: #a78bfa; color: #0f1117; font-weight: 600; }
+
     /* Goal group headers */
     .ci-group { margin-bottom: 0.25rem; }
     .ci-group-header {
@@ -242,6 +253,7 @@
     <h2 style="margin:0">Check-in</h2>
     <button id="ci-edit-btn" class="ci-edit-toggle">Edit</button>
   </div>
+  <div id="group-tabs"></div>
   <div class="ci-section" id="checkin-section"></div>
 
   <h2 style="margin-top:2.5rem">Recent Activity</h2>
@@ -296,7 +308,10 @@
       a.display_order = b.display_order;
       b.display_order = tmp;
       items.sort((x, y) => x.display_order - y.display_order || x.name.localeCompare(y.name));
-      renderCheckinSection(items, window._todayCheckin);
+      const display = window._selectedGroup
+        ? items.filter(it => it.group_id === window._selectedGroup)
+        : items;
+      renderCheckinSection(display, window._todayCheckin, window._groups);
       if (window._editMode) {
         document.getElementById('checkin-section').classList.add('edit-mode');
         const editBtn = document.getElementById('ci-edit-btn');
@@ -382,6 +397,28 @@
 
     function todayTotal(item) {
       return (item.log || []).filter(e => e.date === today).reduce((s, e) => s + (parseInt(e.note) || 0), 0);
+    }
+
+    function renderGroupTabs(groups) {
+      const container = document.getElementById('group-tabs');
+      if (!groups || !groups.length) { container.style.display = 'none'; return; }
+      container.style.display = 'flex';
+      const sel = window._selectedGroup || null;
+      container.innerHTML = [
+        `<button class="group-tab${!sel ? ' active' : ''}" data-id="">All</button>`,
+        ...groups.map(g => `<button class="group-tab${sel === g.id ? ' active' : ''}" data-id="${g.id}">${g.name}</button>`)
+      ].join('');
+      container.querySelectorAll('.group-tab').forEach(btn => {
+        btn.onclick = () => {
+          window._selectedGroup = btn.dataset.id ? parseInt(btn.dataset.id) : null;
+          renderGroupTabs(window._groups);
+          const display = window._selectedGroup
+            ? window._items.filter(it => it.group_id === window._selectedGroup)
+            : window._items;
+          renderCheckinSection(display, window._todayCheckin, window._groups);
+          if (window._editMode) document.getElementById('checkin-section').classList.add('edit-mode');
+        };
+      });
     }
 
     function renderCheckinSection(items, todayCheckin, groups) {
@@ -797,6 +834,8 @@
       const todayCheckin = checkins.find(c => c.date === today) || null;
       window._todayCheckin = todayCheckin;
       window._editMode = false;
+      window._selectedGroup = null;
+      renderGroupTabs(groups);
       renderCheckinSection(items, todayCheckin, groups);
       renderActivityLog(logs, checkins);
       document.getElementById('ci-edit-btn').onclick = () => {
