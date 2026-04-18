@@ -189,6 +189,11 @@
       flex-shrink: 0; touch-action: manipulation; line-height: 1;
     }
     .ci-reorder-btn:active { background: #2a2d3a; }
+    .grp-reorder-btn {
+      width: 22px; height: 22px; border-radius: 4px; border: 1px solid #2a2d3a;
+      background: #1a1d27; color: #bcc3cd; font-size: 0.7rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; touch-action: manipulation;
+    }
 
     /* ── Interactive control wrapper ── */
     .ci-interactive { display: flex; align-items: center; flex-shrink: 0; }
@@ -249,13 +254,21 @@
 
   <div class="ci-section-hdr">
     <h2 style="margin:0">Check-in</h2>
-    <button id="ci-edit-btn" class="ci-edit-toggle">Edit</button>
+    <div style="display:flex;gap:0.4rem;align-items:center">
+      <button id="ci-add-btn" class="ci-edit-toggle" title="Add item">+</button>
+      <button id="ci-grp-btn" class="ci-edit-toggle" title="Manage groups">⚙</button>
+      <button id="ci-edit-btn" class="ci-edit-toggle">Organize</button>
+    </div>
   </div>
+  <div id="ci-manage-area"></div>
   <div id="group-tabs"></div>
   <div id="checkin-section"></div>
 
-  <h2 style="margin-top:2.5rem">Recent Activity</h2>
-  <div id="activity-log"></div>
+  <div class="ci-section-hdr" style="margin-top:2.5rem;cursor:pointer" id="activity-hdr">
+    <h2 style="margin:0">Recent Activity</h2>
+    <span id="activity-toggle" style="color:#555b66;font-size:0.85rem">▼</span>
+  </div>
+  <div id="activity-log" style="display:none"></div>
 
   <script>
     /* ── Auth ── */
@@ -313,7 +326,7 @@
       if (window._editMode) {
         document.getElementById('checkin-section').classList.add('edit-mode');
         const editBtn = document.getElementById('ci-edit-btn');
-        if (editBtn) { editBtn.textContent = 'Done'; editBtn.classList.add('active'); }
+        if (editBtn) { editBtn.textContent = 'Done'; editBtn.classList.add('active'); } // stays 'Done' while organizing
       }
       await Promise.all([
         fetch(`/api/items/${a.id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ display_order: a.display_order }) }),
@@ -421,6 +434,123 @@
 
     function todayTotal(item) {
       return (item.log || []).filter(e => e.date === today).reduce((s, e) => s + (parseInt(e.note) || 0), 0);
+    }
+
+    function renderManagePanels(groups) {
+      const area = document.getElementById('ci-manage-area');
+      area.innerHTML = `
+        <div id="add-item-section" style="display:none">
+          <div style="border-top:1px solid #2a2d3a;padding:0.75rem 0">
+            <input class="form-input" id="new-item-name" placeholder="Name" style="margin-bottom:0.5rem">
+            <select class="form-input" id="new-item-type" style="margin-bottom:0.5rem;background:#0f1117">
+              <option value="boolean">Toggle (yes/no)</option>
+              <option value="counter">Counter (+/−)</option>
+              <option value="slider">Slider (range)</option>
+            </select>
+            <select class="form-input" id="new-item-cadence" style="margin-bottom:0.5rem;background:#0f1117">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="ongoing">Ongoing</option>
+            </select>
+            <div id="new-item-counter-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
+              <input class="form-input" id="new-item-step" type="number" placeholder="1" style="width:49%;display:inline-block">
+              <input class="form-input" id="new-item-unit" placeholder="Unit (min, species…)" style="width:49%;display:inline-block">
+            </div>
+            <div id="new-item-slider-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
+              <input class="form-input" id="new-item-rmin" type="number" placeholder="Min" value="1" style="width:30%;display:inline-block">
+              <input class="form-input" id="new-item-rmax" type="number" placeholder="Max" value="10" style="width:30%;display:inline-block">
+            </div>
+            <button class="ci-submit" id="new-item-submit">Add item</button>
+            <div class="ci-msg" id="new-item-msg"></div>
+          </div>
+        </div>
+        <div id="manage-groups-section" style="display:none">
+          <div style="border-top:1px solid #2a2d3a;padding:0.75rem 0">
+            ${(groups || []).map(g => `
+              <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;align-items:center">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <button class="grp-reorder-btn" data-id="${g.id}" data-dir="up">↑</button>
+                  <button class="grp-reorder-btn" data-id="${g.id}" data-dir="down">↓</button>
+                </div>
+                <input class="form-input grp-name-input" data-id="${g.id}" value="${g.name}" style="flex:1">
+                <button class="ci-submit grp-save-btn" data-id="${g.id}" style="flex:0;margin-top:0;padding:8px;font-size:0.85rem;width:auto">Save</button>
+                <button class="ci-cfg-remove grp-delete-btn" data-id="${g.id}">✕</button>
+              </div>
+            `).join('')}
+            <div style="display:flex;gap:0.4rem;margin-top:0.5rem;align-items:center">
+              <input class="form-input" id="new-group-name" placeholder="Group name" style="flex:1">
+              <button class="ci-submit" id="new-group-submit" style="flex:0;margin-top:0;padding:8px;font-size:0.85rem;width:auto">Add</button>
+            </div>
+            <div class="ci-msg" id="new-group-msg"></div>
+          </div>
+        </div>`;
+
+      const typeSelect = document.getElementById('new-item-type');
+      typeSelect.onchange = () => {
+        document.getElementById('new-item-counter-opts').style.display = typeSelect.value === 'counter' ? 'flex' : 'none';
+        document.getElementById('new-item-slider-opts').style.display = typeSelect.value === 'slider' ? 'flex' : 'none';
+      };
+      document.getElementById('new-item-submit').onclick = async () => {
+        const name = document.getElementById('new-item-name').value.trim();
+        if (!name) return;
+        const body = {
+          name,
+          input_type: typeSelect.value,
+          cadence: document.getElementById('new-item-cadence').value,
+          step_size: parseInt(document.getElementById('new-item-step')?.value) || 1,
+          step_unit: document.getElementById('new-item-unit')?.value || '',
+          range_min: parseInt(document.getElementById('new-item-rmin')?.value) || 1,
+          range_max: parseInt(document.getElementById('new-item-rmax')?.value) || 10,
+        };
+        const res = await fetch('/api/items', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const msg = document.getElementById('new-item-msg');
+        if (res.ok) {
+          msg.textContent = '✓ Added — reloading…'; msg.classList.remove('error');
+          setTimeout(() => location.reload(), 800);
+        } else {
+          msg.textContent = '✗ Failed'; msg.classList.add('error');
+        }
+      };
+
+      const newGroupSubmit = document.getElementById('new-group-submit');
+      if (newGroupSubmit) {
+        newGroupSubmit.onclick = async () => {
+          const name = document.getElementById('new-group-name').value.trim();
+          if (!name) return;
+          const msg = document.getElementById('new-group-msg');
+          const res = await fetch('/api/groups', {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
+          });
+          if (res.ok) {
+            msg.textContent = '✓ Added — reloading…'; msg.classList.remove('error');
+            setTimeout(() => location.reload(), 800);
+          } else {
+            msg.textContent = '✗ Failed'; msg.classList.add('error');
+          }
+        };
+      }
+      document.querySelectorAll('.grp-save-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const name = document.querySelector(`.grp-name-input[data-id="${id}"]`)?.value?.trim();
+          if (!name) return;
+          await fetch(`/api/groups/${id}`, {
+            method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
+          });
+          location.reload();
+        };
+      });
+      document.querySelectorAll('.grp-delete-btn').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('Delete group? Items will be ungrouped.')) return;
+          const res = await fetch(`/api/groups/${btn.dataset.id}`, { method: 'DELETE' });
+          if (res.ok) location.reload();
+        };
+      });
+      document.querySelectorAll('.grp-reorder-btn').forEach(btn => {
+        btn.onclick = () => reorderGroup(btn.dataset.id, btn.dataset.dir);
+      });
     }
 
     function renderGroupTabs(groups) {
@@ -556,91 +686,7 @@
         html += `</div>`;
       }
 
-      // Add item form
-      html += `<div class="ci-extra" id="add-item-section" style="margin-top:0.75rem">
-        <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
-          <span class="ci-extra-title" style="color:#555b66;font-size:0.85rem">+ Add item</span>
-        </div>
-        <div class="ci-extra-body" style="padding-top:0.75rem">
-          <input class="form-input" id="new-item-name" placeholder="Name" style="margin-bottom:0.5rem">
-          <select class="form-input" id="new-item-type" style="margin-bottom:0.5rem;background:#0f1117">
-            <option value="boolean">Toggle (yes/no)</option>
-            <option value="counter">Counter (+/−)</option>
-            <option value="slider">Slider (range)</option>
-          </select>
-          <select class="form-input" id="new-item-cadence" style="margin-bottom:0.5rem;background:#0f1117">
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="ongoing">Ongoing</option>
-          </select>
-          <div id="new-item-counter-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
-            <input class="form-input" id="new-item-step" type="number" placeholder="1" style="width:49%;display:inline-block">
-            <input class="form-input" id="new-item-unit" placeholder="Unit (min, species…)" style="width:49%;display:inline-block">
-          </div>
-          <div id="new-item-slider-opts" style="display:none;gap:0.5rem;margin-bottom:0.5rem">
-            <input class="form-input" id="new-item-rmin" type="number" placeholder="Min" value="1" style="width:30%;display:inline-block">
-            <input class="form-input" id="new-item-rmax" type="number" placeholder="Max" value="10" style="width:30%;display:inline-block">
-          </div>
-          <button class="ci-submit" id="new-item-submit">Add item</button>
-          <div class="ci-msg" id="new-item-msg"></div>
-        </div>
-      </div>`;
-
-      html += `<div class="ci-extra" id="manage-groups-section" style="margin-top:0.75rem">
-        <div class="ci-extra-header" onclick="this.parentElement.classList.toggle('open')">
-          <span class="ci-extra-title" style="color:#555b66;font-size:0.85rem">+ Manage groups</span>
-        </div>
-        <div class="ci-extra-body" style="padding-top:0.75rem">
-          ${(groups || []).map(g => `
-            <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;align-items:center">
-              <div style="display:flex;flex-direction:column;gap:2px">
-                <button class="ci-reorder-btn grp-reorder-btn" data-id="${g.id}" data-dir="up">↑</button>
-                <button class="ci-reorder-btn grp-reorder-btn" data-id="${g.id}" data-dir="down">↓</button>
-              </div>
-              <input class="form-input grp-name-input" data-id="${g.id}" value="${g.name}" style="flex:1">
-              <button class="ci-submit grp-save-btn" data-id="${g.id}" style="flex:0;margin-top:0;padding:8px;font-size:0.85rem;width:auto">Save</button>
-              <button class="ci-cfg-remove grp-delete-btn" data-id="${g.id}">✕</button>
-            </div>
-          `).join('')}
-          <div style="display:flex;gap:0.4rem;margin-top:0.5rem;align-items:center">
-            <input class="form-input" id="new-group-name" placeholder="Group name" style="flex:1">
-            <button class="ci-submit" id="new-group-submit" style="flex:0;margin-top:0;padding:8px;font-size:0.85rem;width:auto">Add</button>
-          </div>
-          <div class="ci-msg" id="new-group-msg"></div>
-        </div>
-      </div>`;
-
       section.innerHTML = html;
-
-      // Wire type select → show/hide extra fields (add-item form)
-      const typeSelect = document.getElementById('new-item-type');
-      typeSelect.onchange = () => {
-        document.getElementById('new-item-counter-opts').style.display = typeSelect.value === 'counter' ? 'flex' : 'none';
-        document.getElementById('new-item-slider-opts').style.display = typeSelect.value === 'slider' ? 'flex' : 'none';
-      };
-
-      document.getElementById('new-item-submit').onclick = async () => {
-        const name = document.getElementById('new-item-name').value.trim();
-        if (!name) return;
-        const body = {
-          name,
-          input_type: typeSelect.value,
-          cadence: document.getElementById('new-item-cadence').value,
-          step_size: parseInt(document.getElementById('new-item-step')?.value) || 1,
-          step_unit: document.getElementById('new-item-unit')?.value || '',
-          range_min: parseInt(document.getElementById('new-item-rmin')?.value) || 1,
-          range_max: parseInt(document.getElementById('new-item-rmax')?.value) || 10,
-        };
-        const res = await fetch('/api/items', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-        const msg = document.getElementById('new-item-msg');
-        if (res.ok) {
-          msg.textContent = '✓ Added — reloading…'; msg.classList.remove('error');
-          setTimeout(() => location.reload(), 800);
-        } else {
-          msg.textContent = '✗ Failed'; msg.classList.add('error');
-        }
-      };
 
       // Optimistically push a log entry and refresh the activity log
       function pushLog(itemId, note) {
@@ -766,45 +812,6 @@
         };
       });
 
-      // Wire group management
-      const newGroupSubmit = document.getElementById('new-group-submit');
-      if (newGroupSubmit) {
-        newGroupSubmit.onclick = async () => {
-          const name = document.getElementById('new-group-name').value.trim();
-          if (!name) return;
-          const msg = document.getElementById('new-group-msg');
-          const res = await fetch('/api/groups', {
-            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
-          });
-          if (res.ok) {
-            msg.textContent = '✓ Added — reloading…'; msg.classList.remove('error');
-            setTimeout(() => location.reload(), 800);
-          } else {
-            msg.textContent = '✗ Failed'; msg.classList.add('error');
-          }
-        };
-      }
-      document.querySelectorAll('.grp-save-btn').forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.dataset.id;
-          const name = document.querySelector(`.grp-name-input[data-id="${id}"]`)?.value?.trim();
-          if (!name) return;
-          await fetch(`/api/groups/${id}`, {
-            method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
-          });
-          location.reload();
-        };
-      });
-      document.querySelectorAll('.grp-delete-btn').forEach(btn => {
-        btn.onclick = async () => {
-          if (!confirm('Delete group? Items will be ungrouped.')) return;
-          const res = await fetch(`/api/groups/${btn.dataset.id}`, { method: 'DELETE' });
-          if (res.ok) location.reload();
-        };
-      });
-      document.querySelectorAll('.grp-reorder-btn').forEach(btn => {
-        btn.onclick = () => reorderGroup(btn.dataset.id, btn.dataset.dir);
-      });
     }
 
     /* ── Activity log ── */
@@ -872,17 +879,37 @@
       window._editMode = false;
       window._selectedGroup = null;
       renderGroupTabs(groups);
+      renderManagePanels(groups);
       renderCheckinSection(items, todayCheckin, groups);
       renderActivityLog(logs, checkins);
       document.getElementById('ci-edit-btn').onclick = () => {
         window._editMode = !window._editMode;
         document.getElementById('checkin-section').classList.toggle('edit-mode', window._editMode);
         const btn = document.getElementById('ci-edit-btn');
-        btn.textContent = window._editMode ? 'Done' : 'Edit';
+        btn.textContent = window._editMode ? 'Done' : 'Organize';
         btn.classList.toggle('active', window._editMode);
         if (!window._editMode) {
           document.querySelectorAll('.ci-cfg.open').forEach(el => el.classList.remove('open'));
         }
+      };
+      document.getElementById('ci-add-btn').onclick = () => {
+        const panel = document.getElementById('add-item-section');
+        const grpPanel = document.getElementById('manage-groups-section');
+        if (grpPanel) grpPanel.style.display = 'none';
+        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      };
+      document.getElementById('ci-grp-btn').onclick = () => {
+        const panel = document.getElementById('manage-groups-section');
+        const addPanel = document.getElementById('add-item-section');
+        if (addPanel) addPanel.style.display = 'none';
+        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      };
+      document.getElementById('activity-hdr').onclick = () => {
+        const log = document.getElementById('activity-log');
+        const toggle = document.getElementById('activity-toggle');
+        const opening = log.style.display === 'none';
+        log.style.display = opening ? 'block' : 'none';
+        toggle.textContent = opening ? '▲' : '▼';
       };
     }).catch(err => {
       if (err.message === 'unauthorized') showLogin();
