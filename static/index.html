@@ -789,8 +789,9 @@
           const note = isOn ? 'Undone' : 'Done';
           const ind = document.getElementById(`ci-ind-${id}`);
           pushLog(id, note);
-          const progEl = document.getElementById(`ci-prog-${id}`);
           const item = (window._items || []).find(it => it.id === parseInt(id));
+          if (item) item.log = [{ id: Date.now(), date: today, note }, ...(item.log || [])];
+          const progEl = document.getElementById(`ci-prog-${id}`);
           if (progEl && item) progEl.textContent = periodProgress(item);
           await autoSaveLog(id, note, ind);
         };
@@ -809,8 +810,9 @@
           valEl.dataset.raw = next;
           valEl.textContent = fmtCount(next, btn.dataset.unit);
           pushLog(id, String(step));
-          const progEl = document.getElementById(`ci-prog-${id}`);
           const item = (window._items || []).find(it => it.id === parseInt(id));
+          if (item) item.log = [{ id: Date.now(), date: today, note: String(step) }, ...(item.log || [])];
+          const progEl = document.getElementById(`ci-prog-${id}`);
           if (progEl && item) progEl.textContent = periodProgress(item);
           await autoSaveLog(id, String(step), ind);
         };
@@ -827,6 +829,8 @@
           sliderTimers[id] = setTimeout(() => {
             const ind = document.getElementById(`ci-ind-${id}`);
             pushLog(id, input.value);
+            const item = (window._items || []).find(it => it.id === parseInt(id));
+            if (item) item.log = [{ id: Date.now(), date: today, note: input.value }, ...(item.log || []).filter(e => !(e.date === today && !e.type))];
             autoSaveLog(id, input.value, ind);
           }, 600);
         };
