@@ -106,6 +106,7 @@ func migrateAlter(db *sql.DB) error {
 		"ALTER TABLE items ADD COLUMN range_max INTEGER NOT NULL DEFAULT 10",
 		"ALTER TABLE items ADD COLUMN completed_date TEXT",
 		"ALTER TABLE items ADD COLUMN group_id INTEGER",
+		"ALTER TABLE logs ADD COLUMN group_id INTEGER",
 	}
 	for _, stmt := range alters {
 		if _, err := db.Exec(stmt); err != nil && !strings.Contains(err.Error(), "duplicate column") {

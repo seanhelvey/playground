@@ -75,6 +75,7 @@ func handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		RangeMax     int     `json:"range_max"`
 		TargetValue  *int    `json:"target_value"`
 		TargetPeriod *string `json:"target_period"`
+		GroupID      *int    `json:"group_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
 		http.Error(w, "bad request", 400)
@@ -87,12 +88,16 @@ func handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		req.RangeMin = 1
 		req.RangeMax = 10
 	}
+	var groupID interface{}
+	if req.GroupID != nil && *req.GroupID > 0 {
+		groupID = *req.GroupID
+	}
 	today := time.Now().Format("2006-01-02")
 	_, err := db.Exec(
-		`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, active, display_order)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 99)`,
+		`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, range_min, range_max, target_value, target_period, active, display_order, group_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 99, ?)`,
 		req.Name, today, req.InputType, req.StepSize, req.StepUnit,
-		req.RangeMin, req.RangeMax, req.TargetValue, req.TargetPeriod,
+		req.RangeMin, req.RangeMax, req.TargetValue, req.TargetPeriod, groupID,
 	)
 	if err != nil {
 		http.Error(w, "db error", 400)
@@ -364,7 +369,6 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 type LogFeedEntry struct {
 	ID       int     `json:"id"`
 	Date     string  `json:"date"`
-	ItemID   int     `json:"item_id"`
 	ItemName string  `json:"item_name"`
 	Type     *string `json:"type,omitempty"`
 	Note     string  `json:"note"`
@@ -403,12 +407,16 @@ func handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", 400)
 		return
 	}
-	_, err := db.Exec("INSERT INTO groups (name, display_order) VALUES (?, 99)", req.Name)
+	result, err := db.Exec("INSERT INTO groups (name, display_order) VALUES (?, 99)", req.Name)
 	if err != nil {
 		log.Printf("error creating group: %v", err)
 		http.Error(w, "db error", 500)
 		return
 	}
+	newID, _ := result.LastInsertId()
+	today := time.Now().Format("2006-01-02")
+	db.Exec("INSERT INTO logs (item_id, group_id, date, type, note) VALUES (0, ?, ?, 'config', ?)",
+		newID, today, "created: "+req.Name)
 	writeJSON(w, map[string]string{"status": "created"})
 }
 
@@ -427,10 +435,17 @@ func handleUpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Name != nil {
+		var curName string
+		db.QueryRow("SELECT name FROM groups WHERE id = ?", id).Scan(&curName)
 		if _, err := db.Exec("UPDATE groups SET name = ? WHERE id = ?", *req.Name, id); err != nil {
 			log.Printf("error updating group: %v", err)
 			http.Error(w, "db error", 500)
 			return
+		}
+		if *req.Name != curName {
+			today := time.Now().Format("2006-01-02")
+			db.Exec("INSERT INTO logs (item_id, group_id, date, type, note) VALUES (0, ?, ?, 'config', ?)",
+				id, today, fmt.Sprintf("name: %s→%s", curName, *req.Name))
 		}
 	}
 	if req.DisplayOrder != nil {
@@ -449,6 +464,8 @@ func handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad id", 400)
 		return
 	}
+	var groupName string
+	db.QueryRow("SELECT name FROM groups WHERE id = ?", id).Scan(&groupName)
 	if _, err := db.Exec("UPDATE items SET group_id = NULL WHERE group_id = ?", id); err != nil {
 		log.Printf("error ungrouping items: %v", err)
 		http.Error(w, "db error", 500)
@@ -459,14 +476,23 @@ func handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "db error", 500)
 		return
 	}
+	today := time.Now().Format("2006-01-02")
+	db.Exec("INSERT INTO logs (item_id, group_id, date, type, note) VALUES (0, 0, ?, 'config', ?)",
+		today, "deleted: "+groupName)
 	writeJSON(w, map[string]string{"status": "deleted"})
 }
 
 func handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
-		SELECT l.id, l.date, l.item_id, i.name, l.type, l.note
+		SELECT l.id, l.date,
+			CASE WHEN l.item_id > 0 THEN i.name
+			     WHEN l.group_id > 0 THEN g.name
+			     ELSE 'Groups'
+			END,
+			l.type, l.note
 		FROM logs l
-		JOIN items i ON l.item_id = i.id
+		LEFT JOIN items i ON l.item_id = i.id AND l.item_id > 0
+		LEFT JOIN groups g ON l.group_id = g.id AND l.group_id > 0
 		ORDER BY l.id DESC
 		LIMIT 200
 	`)
@@ -479,7 +505,7 @@ func handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	entries := []LogFeedEntry{}
 	for rows.Next() {
 		var e LogFeedEntry
-		rows.Scan(&e.ID, &e.Date, &e.ItemID, &e.ItemName, &e.Type, &e.Note)
+		rows.Scan(&e.ID, &e.Date, &e.ItemName, &e.Type, &e.Note)
 		entries = append(entries, e)
 	}
 	writeJSON(w, entries)

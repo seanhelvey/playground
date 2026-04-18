@@ -238,29 +238,22 @@
       body { padding: 24px 16px 60px; }
     }
 
-    /* ── Version footer ── */
+    /* ── Version ── */
     #version-footer {
-      position: fixed; bottom: 12px; left: 16px;
-      font-size: 0.7rem; color: #3a3d4d; pointer-events: none;
+      position: fixed; top: 12px; right: 16px;
+      font-size: 0.72rem; color: #555b66; pointer-events: none; z-index: 10;
     }
   </style>
 </head>
 <body>
 
-  <h1>Playground</h1>
-  <p class="intro">A personal flywheel. Build, act, learn, repeat.</p>
-
   <div id="version-footer"></div>
 
   <div class="ci-section-hdr">
     <h2 style="margin:0">Check-in</h2>
-    <div style="display:flex;gap:0.4rem;align-items:center">
-      <button id="ci-add-btn" class="ci-edit-toggle">Add</button>
-      <button id="ci-grp-btn" class="ci-edit-toggle">Groups</button>
-      <button id="ci-edit-btn" class="ci-edit-toggle">Organize</button>
-    </div>
+    <button id="ci-edit-btn" class="ci-edit-toggle">Edit</button>
   </div>
-  <div id="ci-manage-area"></div>
+  <div id="ci-manage-area" style="display:none"></div>
   <div id="group-tabs"></div>
   <div id="checkin-section"></div>
 
@@ -355,6 +348,8 @@
       renderCheckinSection(display, window._todayCheckin, groups);
       if (window._editMode) document.getElementById('checkin-section').classList.add('edit-mode');
       renderManagePanels(groups);
+      const manageArea = document.getElementById('ci-manage-area');
+      if (manageArea) manageArea.style.display = 'block';
       const managePanel = document.getElementById('manage-groups-section');
       if (managePanel) managePanel.style.display = 'block';
       await Promise.all([
@@ -442,6 +437,10 @@
     function renderManagePanels(groups) {
       const area = document.getElementById('ci-manage-area');
       area.innerHTML = `
+        <div style="display:flex;gap:0.5rem;padding:0.5rem 0 0.25rem">
+          <button class="ci-edit-toggle" id="mp-add-btn">+ Add item</button>
+          <button class="ci-edit-toggle" id="mp-grp-btn">Groups</button>
+        </div>
         <div id="add-item-section" style="display:none">
           <div style="border-top:1px solid #2a2d3a;padding:0.75rem 0">
             <input class="form-input" id="new-item-name" placeholder="Name" style="margin-bottom:0.5rem">
@@ -449,6 +448,10 @@
               <option value="boolean">Toggle (yes/no)</option>
               <option value="counter">Counter (+/−)</option>
               <option value="slider">Slider (range)</option>
+            </select>
+            <select class="form-input" id="new-item-group" style="margin-bottom:0.5rem;background:#0f1117">
+              <option value="0">No group</option>
+              ${(groups || []).map(g => `<option value="${g.id}">${g.name}</option>`).join('')}
             </select>
             <select class="form-input" id="new-item-cadence" style="margin-bottom:0.5rem;background:#0f1117">
               <option value="daily">Daily</option>
@@ -489,6 +492,18 @@
           </div>
         </div>`;
 
+      document.getElementById('mp-add-btn').onclick = () => {
+        const panel = document.getElementById('add-item-section');
+        const grpPanel = document.getElementById('manage-groups-section');
+        if (grpPanel) grpPanel.style.display = 'none';
+        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      };
+      document.getElementById('mp-grp-btn').onclick = () => {
+        const panel = document.getElementById('manage-groups-section');
+        const addPanel = document.getElementById('add-item-section');
+        if (addPanel) addPanel.style.display = 'none';
+        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      };
       const typeSelect = document.getElementById('new-item-type');
       typeSelect.onchange = () => {
         document.getElementById('new-item-counter-opts').style.display = typeSelect.value === 'counter' ? 'flex' : 'none';
@@ -497,9 +512,11 @@
       document.getElementById('new-item-submit').onclick = async () => {
         const name = document.getElementById('new-item-name').value.trim();
         if (!name) return;
+        const groupVal = parseInt(document.getElementById('new-item-group')?.value) || 0;
         const body = {
           name,
           input_type: typeSelect.value,
+          group_id: groupVal || undefined,
           cadence: document.getElementById('new-item-cadence').value,
           step_size: parseInt(document.getElementById('new-item-step')?.value) || 1,
           step_unit: document.getElementById('new-item-unit')?.value || '',
@@ -862,7 +879,7 @@
     /* ── Version ── */
     fetch('/api/health').then(r => r.json()).then(h => {
       const el = document.getElementById('version-footer');
-      if (el && h.sha) el.textContent = h.sha.slice(0, 7);
+      if (el && h.sha) el.textContent = 'version ' + h.sha.slice(0, 7);
     }).catch(() => {});
 
     /* ── Load ── */
@@ -888,24 +905,18 @@
       document.getElementById('ci-edit-btn').onclick = () => {
         window._editMode = !window._editMode;
         document.getElementById('checkin-section').classList.toggle('edit-mode', window._editMode);
+        const manageArea = document.getElementById('ci-manage-area');
+        if (manageArea) manageArea.style.display = window._editMode ? 'block' : 'none';
         const btn = document.getElementById('ci-edit-btn');
-        btn.textContent = window._editMode ? 'Done' : 'Organize';
+        btn.textContent = window._editMode ? 'Done' : 'Edit';
         btn.classList.toggle('active', window._editMode);
         if (!window._editMode) {
           document.querySelectorAll('.ci-cfg.open').forEach(el => el.classList.remove('open'));
+          const addPanel = document.getElementById('add-item-section');
+          const grpPanel = document.getElementById('manage-groups-section');
+          if (addPanel) addPanel.style.display = 'none';
+          if (grpPanel) grpPanel.style.display = 'none';
         }
-      };
-      document.getElementById('ci-add-btn').onclick = () => {
-        const panel = document.getElementById('add-item-section');
-        const grpPanel = document.getElementById('manage-groups-section');
-        if (grpPanel) grpPanel.style.display = 'none';
-        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      };
-      document.getElementById('ci-grp-btn').onclick = () => {
-        const panel = document.getElementById('manage-groups-section');
-        const addPanel = document.getElementById('add-item-section');
-        if (addPanel) addPanel.style.display = 'none';
-        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
       };
       document.getElementById('activity-hdr').onclick = () => {
         const log = document.getElementById('activity-log');
