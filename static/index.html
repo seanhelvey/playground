@@ -190,10 +190,12 @@
     }
     .ci-reorder-btn:active { background: #2a2d3a; }
     .grp-reorder-btn {
-      width: 22px; height: 22px; border-radius: 4px; border: 1px solid #2a2d3a;
-      background: #1a1d27; color: #bcc3cd; font-size: 0.7rem; cursor: pointer;
+      width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2a2d3a;
+      background: #1a1d27; color: #bcc3cd; font-size: 1rem; cursor: pointer;
       display: flex; align-items: center; justify-content: center; touch-action: manipulation;
+      flex-shrink: 0;
     }
+    .grp-reorder-btn:active { background: #2a2d3a; }
 
     /* ── Interactive control wrapper ── */
     .ci-interactive { display: flex; align-items: center; flex-shrink: 0; }
@@ -238,11 +240,9 @@
 
     /* ── Version footer ── */
     #version-footer {
-      margin-top: 2.5rem; text-align: center;
-      font-size: 0.72rem; color: #555b66;
+      position: fixed; bottom: 12px; left: 16px;
+      font-size: 0.7rem; color: #3a3d4d; pointer-events: none;
     }
-    #version-footer a { color: inherit; text-decoration: none; }
-    #version-footer a:hover { color: #555b66; }
   </style>
 </head>
 <body>
@@ -255,8 +255,8 @@
   <div class="ci-section-hdr">
     <h2 style="margin:0">Check-in</h2>
     <div style="display:flex;gap:0.4rem;align-items:center">
-      <button id="ci-add-btn" class="ci-edit-toggle" title="Add item">+</button>
-      <button id="ci-grp-btn" class="ci-edit-toggle" title="Manage groups">⚙</button>
+      <button id="ci-add-btn" class="ci-edit-toggle">Add</button>
+      <button id="ci-grp-btn" class="ci-edit-toggle">Groups</button>
       <button id="ci-edit-btn" class="ci-edit-toggle">Organize</button>
     </div>
   </div>
@@ -354,6 +354,9 @@
         : window._items;
       renderCheckinSection(display, window._todayCheckin, groups);
       if (window._editMode) document.getElementById('checkin-section').classList.add('edit-mode');
+      renderManagePanels(groups);
+      const managePanel = document.getElementById('manage-groups-section');
+      if (managePanel) managePanel.style.display = 'block';
       await Promise.all([
         fetch(`/api/groups/${a.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ display_order: a.display_order }) }),
         fetch(`/api/groups/${b.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ display_order: b.display_order }) })
