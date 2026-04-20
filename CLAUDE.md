@@ -57,15 +57,19 @@ Open `http://localhost:8080`. The server serves the PWA from `static/`.
 
 Pushing to `main` triggers an automatic deploy via `.github/workflows/deploy.yml`. Requires `FLY_API_TOKEN` set as a GitHub Actions secret.
 
-**Verify a deploy succeeded:**
-```bash
-# Check GitHub Actions (unauthenticated, rate-limited to 60/hr)
-curl -s "https://api.github.com/repos/seanhelvey/playground/actions/runs?per_page=1" | python3 -c "import json,sys; r=json.load(sys.stdin)['workflow_runs'][0]; print(r['conclusion'], r['display_title'])"
+**Live URL: https://playground-flywheel.fly.dev**
 
-# Check what SHA is live on Fly.io
+**After every deploy, verify by fetching the health endpoint and comparing the SHA:**
+```bash
 curl -s https://playground-flywheel.fly.dev/api/health
+git rev-parse --short HEAD
 ```
-Compare the `sha` in the health response to the latest git commit (`git rev-parse --short HEAD`).
+The `sha` field in the health response must match. If it doesn't match yet, wait ~60s and retry — the deploy is still in progress.
+
+**For UI changes, also fetch the live page to confirm the change is visible:**
+```bash
+curl -s https://playground-flywheel.fly.dev/ | grep -o '<your expected string>'
+```
 
 ---
 
