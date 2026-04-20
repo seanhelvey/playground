@@ -41,9 +41,14 @@ func newTestServer(t *testing.T) (*httptest.Server, *http.Cookie) {
 	mux.HandleFunc("POST /api/login", handleLogin)
 	api := http.NewServeMux()
 	api.HandleFunc("GET /api/items", handleGetItems)
+	api.HandleFunc("POST /api/items", handleCreateItem)
+	api.HandleFunc("PATCH /api/items/{id}", handleUpdateItem)
 	api.HandleFunc("POST /api/items/{id}/log", handleAddLog)
 	api.HandleFunc("GET /api/checkins", handleGetCheckins)
 	api.HandleFunc("POST /api/checkins", handleAddCheckin)
+	api.HandleFunc("GET /api/groups", handleGetGroups)
+	api.HandleFunc("POST /api/groups", handleCreateGroup)
+	api.HandleFunc("PATCH /api/groups/{id}", handleUpdateGroup)
 	mux.Handle("/api/", authMiddleware(api))
 
 	srv := httptest.NewServer(mux)
@@ -347,6 +352,146 @@ func TestActivityLogAllItemTypes(t *testing.T) {
 		if !hasToday {
 			t.Fatalf("%s has no log entry for today — would not appear in activity log after reload", name)
 		}
+	}
+}
+
+// TestItemReorderPersists proves that PATCHing display_order on two items
+// swaps their position in the GET /api/items response after reload.
+func TestItemReorderPersists(t *testing.T) {
+	srv, cookie := newTestServer(t)
+
+	wakeID := os.Getenv("TEST_WAKE_ID")
+	medID := os.Getenv("TEST_MED_ID")
+
+	// Swap: wake gets order 2, med gets order 1
+	for _, tc := range []struct{ id string; order int }{{wakeID, 2}, {medID, 1}} {
+		resp := apiReq(t, srv, cookie, "PATCH", "/api/items/"+tc.id, map[string]int{"display_order": tc.order})
+		if resp.StatusCode != 200 {
+			t.Fatalf("PATCH display_order returned %d for item %s", resp.StatusCode, tc.id)
+		}
+	}
+
+	resp := apiReq(t, srv, cookie, "GET", "/api/items", nil)
+	var items []Item
+	json.NewDecoder(resp.Body).Decode(&items)
+
+	if len(items) < 2 {
+		t.Fatal("expected at least 2 items")
+	}
+	if items[0].Name != "Meditation" || items[1].Name != "Wake to alarm" {
+		t.Fatalf("expected Meditation first after reorder, got %q then %q", items[0].Name, items[1].Name)
+	}
+}
+
+// TestItemCreateAndSoftDelete proves that POST /api/items creates a visible item
+// and PATCH active=0 removes it from the GET response.
+func TestItemCreateAndSoftDelete(t *testing.T) {
+	srv, cookie := newTestServer(t)
+
+	resp := apiReq(t, srv, cookie, "POST", "/api/items", map[string]any{
+		"name": "Read", "input_type": "boolean",
+	})
+	if resp.StatusCode != 200 {
+		t.Fatalf("POST /api/items returned %d", resp.StatusCode)
+	}
+
+	// Find the created item by name
+	resp = apiReq(t, srv, cookie, "GET", "/api/items", nil)
+	var items []Item
+	json.NewDecoder(resp.Body).Decode(&items)
+	var created *Item
+	for i := range items {
+		if items[i].Name == "Read" {
+			created = &items[i]
+		}
+	}
+	if created == nil {
+		t.Fatal("created item not found in GET /api/items")
+	}
+
+	idStr := strconv.Itoa(created.ID)
+	resp = apiReq(t, srv, cookie, "PATCH", "/api/items/"+idStr, map[string]int{"active": 0})
+	if resp.StatusCode != 200 {
+		t.Fatalf("PATCH active=0 returned %d", resp.StatusCode)
+	}
+
+	resp = apiReq(t, srv, cookie, "GET", "/api/items", nil)
+	json.NewDecoder(resp.Body).Decode(&items)
+	for _, it := range items {
+		if it.ID == created.ID {
+			t.Fatal("soft-deleted item still appears in GET /api/items")
+		}
+	}
+}
+
+// TestGroupCreateAndItemAssign proves that POST /api/groups creates a group and
+// PATCHing an item's group_id assigns it, which is reflected in GET /api/items.
+func TestGroupCreateAndItemAssign(t *testing.T) {
+	srv, cookie := newTestServer(t)
+
+	resp := apiReq(t, srv, cookie, "POST", "/api/groups", map[string]string{"name": "Morning"})
+	if resp.StatusCode != 200 {
+		t.Fatalf("POST /api/groups returned %d", resp.StatusCode)
+	}
+
+	// Find the created group by name
+	resp = apiReq(t, srv, cookie, "GET", "/api/groups", nil)
+	var groups []Group
+	json.NewDecoder(resp.Body).Decode(&groups)
+	var grp *Group
+	for i := range groups {
+		if groups[i].Name == "Morning" {
+			grp = &groups[i]
+		}
+	}
+	if grp == nil {
+		t.Fatal("created group not found in GET /api/groups")
+	}
+
+	wakeID := os.Getenv("TEST_WAKE_ID")
+	resp = apiReq(t, srv, cookie, "PATCH", "/api/items/"+wakeID, map[string]int{"group_id": grp.ID})
+	if resp.StatusCode != 200 {
+		t.Fatalf("PATCH group_id returned %d", resp.StatusCode)
+	}
+
+	resp = apiReq(t, srv, cookie, "GET", "/api/items", nil)
+	var items []Item
+	json.NewDecoder(resp.Body).Decode(&items)
+	for _, it := range items {
+		if it.Name == "Wake to alarm" {
+			if it.GroupID == nil || *it.GroupID != grp.ID {
+				t.Fatalf("expected group_id=%d, got %v", grp.ID, it.GroupID)
+			}
+			return
+		}
+	}
+	t.Fatal("Wake to alarm not found in items")
+}
+
+// TestGroupReorderPersists proves that PATCHing display_order on two groups
+// swaps their position in the GET /api/groups response.
+func TestGroupReorderPersists(t *testing.T) {
+	srv, cookie := newTestServer(t)
+
+	r1 := apiReq(t, srv, cookie, "POST", "/api/groups", map[string]string{"name": "Morning"})
+	r2 := apiReq(t, srv, cookie, "POST", "/api/groups", map[string]string{"name": "Evening"})
+	var g1, g2 Group
+	json.NewDecoder(r1.Body).Decode(&g1)
+	json.NewDecoder(r2.Body).Decode(&g2)
+
+	// Swap orders
+	apiReq(t, srv, cookie, "PATCH", "/api/groups/"+strconv.Itoa(g1.ID), map[string]int{"display_order": 20})
+	apiReq(t, srv, cookie, "PATCH", "/api/groups/"+strconv.Itoa(g2.ID), map[string]int{"display_order": 10})
+
+	resp := apiReq(t, srv, cookie, "GET", "/api/groups", nil)
+	var groups []Group
+	json.NewDecoder(resp.Body).Decode(&groups)
+
+	if len(groups) < 2 {
+		t.Fatal("expected at least 2 groups")
+	}
+	if groups[0].Name != "Evening" || groups[1].Name != "Morning" {
+		t.Fatalf("expected Evening first after reorder, got %q then %q", groups[0].Name, groups[1].Name)
 	}
 }
 
