@@ -677,7 +677,7 @@
 
         const isCounter = it.input_type === 'counter';
         const cfgHtml = `<div class="ci-cfg" id="ci-cfg-${it.id}">
-          <input class="form-input" id="ci-cfg-name-${it.id}" placeholder="Name" value="${it.name}" style="margin-bottom:0.4rem">
+          <textarea class="form-input" id="ci-cfg-name-${it.id}" placeholder="Name" rows="2" style="margin-bottom:0.4rem;resize:vertical">${it.name}</textarea>
           <select class="form-input ci-cfg-type" data-id="${it.id}" style="margin-bottom:0.4rem;background:#0f1117">
             <option value="boolean"${it.input_type === 'boolean' ? ' selected' : ''}>Toggle (yes/no)</option>
             <option value="counter"${it.input_type === 'counter' ? ' selected' : ''}>Counter (+/−)</option>
