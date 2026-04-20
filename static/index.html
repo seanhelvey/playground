@@ -243,11 +243,22 @@
       position: fixed; top: 12px; right: 16px;
       font-size: 0.72rem; color: #555b66; pointer-events: none; z-index: 10;
     }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 10px 18px; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+      color: #0f1117; z-index: 999; display: none; white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    #toast.ok { background: #34d399; }
+    #toast.err { background: #f87171; }
   </style>
 </head>
 <body>
 
   <div id="version-footer"></div>
+  <div id="toast"></div>
 
   <div class="ci-section-hdr">
     <h2 style="margin:0">Check-in</h2>
@@ -297,6 +308,17 @@
       return `${val} ${unit}`;
     }
 
+    /* ── Toast notification ── */
+    let _toastTimer;
+    function showToast(msg, type = 'ok') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = type;
+      t.style.display = 'block';
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
     /* ── Reorder items ── */
     async function reorderItem(id, dir) {
       const items = window._items;
@@ -325,10 +347,17 @@
         const editBtn = document.getElementById('ci-edit-btn');
         if (editBtn) { editBtn.textContent = 'Done'; editBtn.classList.add('active'); } // stays 'Done' while organizing
       }
-      await Promise.all([
-        fetch(`/api/items/${a.id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ display_order: a.display_order }) }),
-        fetch(`/api/items/${b.id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ display_order: b.display_order }) })
-      ]);
+      try {
+        const results = await Promise.all([
+          fetch(`/api/items/${a.id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ display_order: a.display_order }) }),
+          fetch(`/api/items/${b.id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ display_order: b.display_order }) })
+        ]);
+        if (!results.every(r => r.ok)) {
+          showToast('Failed to save order ✗', 'err');
+        }
+      } catch (e) {
+        showToast('Network error saving order ✗', 'err');
+      }
     }
 
     async function reorderGroup(id, dir) {
@@ -356,10 +385,17 @@
       if (manageArea) manageArea.style.display = 'block';
       const managePanel = document.getElementById('manage-groups-section');
       if (managePanel) managePanel.style.display = 'block';
-      await Promise.all([
-        fetch(`/api/groups/${a.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ display_order: a.display_order }) }),
-        fetch(`/api/groups/${b.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ display_order: b.display_order }) })
-      ]);
+      try {
+        const results = await Promise.all([
+          fetch(`/api/groups/${a.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ display_order: a.display_order }) }),
+          fetch(`/api/groups/${b.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ display_order: b.display_order }) })
+        ]);
+        if (!results.every(r => r.ok)) {
+          showToast('Failed to save group order ✗', 'err');
+        }
+      } catch (e) {
+        showToast('Network error saving group order ✗', 'err');
+      }
     }
 
     /* ── Check-in section ── */
