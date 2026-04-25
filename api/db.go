@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"strings"
 )
 
@@ -91,36 +90,6 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	return migrateAlter(db)
-}
-
-// setupHobbiesAndGoals creates the Hobbies and Goals groups and moves the
-// matching items into them. Idempotent — skips each group if it already exists.
-func setupHobbiesAndGoals(db *sql.DB) {
-	type setup struct {
-		name  string
-		items []string
-	}
-	groups := []setup{
-		{"Hobbies", []string{"gardening", "fishing", "dancing", "music"}},
-		{"Goals", []string{"own a home", "fallback income", "full-stack", "non-django"}},
-	}
-	for _, g := range groups {
-		var id int
-		err := db.QueryRow("SELECT id FROM groups WHERE name = ?", g.name).Scan(&id)
-		if err == nil {
-			continue // already exists
-		}
-		res, err := db.Exec("INSERT INTO groups (name, display_order) VALUES (?, 90)", g.name)
-		if err != nil {
-			log.Printf("setupHobbiesAndGoals: create %s: %v", g.name, err)
-			continue
-		}
-		newID, _ := res.LastInsertId()
-		for _, item := range g.items {
-			db.Exec("UPDATE items SET group_id = ? WHERE LOWER(name) = ?", newID, item)
-		}
-		log.Printf("setupHobbiesAndGoals: created %s (id=%d)", g.name, newID)
-	}
 }
 
 // migrateAlter adds columns to existing tables idempotently.
