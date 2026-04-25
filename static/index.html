@@ -616,6 +616,7 @@
       const container = document.getElementById('group-tabs');
       if (!groups || !groups.length) { container.style.display = 'none'; return; }
       container.style.display = 'flex';
+      container.style.flexWrap = 'wrap';
       const sel = window._selectedGroup || null;
       container.innerHTML = [
         `<button class="group-tab${!sel ? ' active' : ''}" data-id="">All</button>`,
