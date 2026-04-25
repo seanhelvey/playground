@@ -1,0 +1,20 @@
+name: One-time group setup
+
+on:
+  push:
+    branches:
+      - setup-groups-fix
+    paths:
+      - .github/workflows/setup-groups.yml
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Create Hobbies and Goals groups and move items
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          SQL=$(printf '%s' "INSERT INTO groups(name,display_order) SELECT 'Hobbies',90 WHERE NOT EXISTS(SELECT 1 FROM groups WHERE name='Hobbies');INSERT INTO groups(name,display_order) SELECT 'Goals',91 WHERE NOT EXISTS(SELECT 1 FROM groups WHERE name='Goals');UPDATE items SET group_id=(SELECT id FROM groups WHERE name='Hobbies') WHERE lower(name) IN('gardening','fishing','dancing','music');UPDATE items SET group_id=(SELECT id FROM groups WHERE name='Goals') WHERE lower(name) IN('own a home','fallback income','full-stack','non-django');" | base64 -w0)
+          flyctl ssh console -a playground-flywheel --pty=false -C "apk add -q sqlite3 >/dev/null 2>&1; echo ${SQL} | base64 -d | sqlite3 /data/playground.db && echo Done"
