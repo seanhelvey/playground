@@ -1,0 +1,72 @@
+name: One-time group setup
+
+on:
+  push:
+    branches:
+      - setup-groups-v3
+    paths:
+      - .github/workflows/setup-groups.yml
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Hobbies and Goals groups and move items
+        env:
+          BASE: https://playground-flywheel.fly.dev
+          TEMP_EMAIL: setup_migration@temp.invalid
+          TEMP_PASS: TempMigration123!
+        run: |
+          # Register a temp user (ok if already exists)
+          curl -s -X POST "$BASE/api/register" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$TEMP_EMAIL\",\"password\":\"$TEMP_PASS\"}" || true
+
+          # Login and save session cookie
+          curl -s -X POST "$BASE/api/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$TEMP_EMAIL\",\"password\":\"$TEMP_PASS\"}" \
+            -c /tmp/cookies.txt
+          echo "Logged in"
+
+          # Create groups (idempotent - server ignores if name conflicts)
+          curl -s -X POST "$BASE/api/groups" -H "Content-Type: application/json" \
+            -b /tmp/cookies.txt -d '{"name":"Hobbies"}'
+          curl -s -X POST "$BASE/api/groups" -H "Content-Type: application/json" \
+            -b /tmp/cookies.txt -d '{"name":"Goals"}'
+
+          # Get group IDs
+          GROUPS=$(curl -s "$BASE/api/groups" -b /tmp/cookies.txt)
+          echo "Groups: $GROUPS"
+          HOBBIES_ID=$(echo "$GROUPS" | jq -r '.[] | select(.name=="Hobbies") | .id')
+          GOALS_ID=$(echo "$GROUPS"   | jq -r '.[] | select(.name=="Goals")   | .id')
+          echo "Hobbies=$HOBBIES_ID Goals=$GOALS_ID"
+
+          # Get all items
+          ITEMS=$(curl -s "$BASE/api/items" -b /tmp/cookies.txt)
+
+          move() {
+            local NAME="$1" GID="$2"
+            ID=$(echo "$ITEMS" | jq -r --arg n "$NAME" \
+              '.[] | select((.name | ascii_downcase) == ($n | ascii_downcase)) | .id')
+            if [ -n "$ID" ] && [ "$ID" != "null" ]; then
+              curl -s -X PATCH "$BASE/api/items/$ID" \
+                -H "Content-Type: application/json" \
+                -b /tmp/cookies.txt \
+                -d "{\"group_id\":$GID}"
+              echo "Moved '$NAME' (id=$ID) -> group $GID"
+            else
+              echo "WARN: '$NAME' not found"
+            fi
+          }
+
+          move "gardening"     "$HOBBIES_ID"
+          move "fishing"       "$HOBBIES_ID"
+          move "dancing"       "$HOBBIES_ID"
+          move "music"         "$HOBBIES_ID"
+          move "own a home"    "$GOALS_ID"
+          move "fallback income" "$GOALS_ID"
+          move "full-stack"    "$GOALS_ID"
+          move "non-django"    "$GOALS_ID"
+
+          echo "Done"
