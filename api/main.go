@@ -35,6 +35,7 @@ func main() {
 	if err := migrate(db); err != nil {
 		log.Fatal("migration failed:", err)
 	}
+	setupHobbiesAndGoals(db)
 
 	// Rate limit: 10 attempts per minute on auth endpoints
 	authLimiter := newRateLimiter(10, time.Minute)
