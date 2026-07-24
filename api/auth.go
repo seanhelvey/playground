@@ -206,24 +206,28 @@ func authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// demoReadOnlyMiddleware blocks the shared demo account from any write
-// request, so a public demo link can never mutate or spam real data.
+// demoWriteLimitMiddleware lets the shared demo account fully use the app
+// (log habits, edit items, reset its own data, ...) but caps how many writes
+// it can make per minute, so a live interview session works normally while a
+// bot hammering the shared credentials can't run up real data or cost.
 // Must run after authMiddleware so userIDKey is already in context.
-func demoReadOnlyMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
+func demoWriteLimitMiddleware(limiter *rateLimiter) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodGet {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			userID := r.Context().Value(userIDKey)
+			var isDemo bool
+			db.QueryRow("SELECT is_demo FROM users WHERE id = ?", userID).Scan(&isDemo)
+			if isDemo && !limiter.allow("demo") {
+				http.Error(w, "demo is getting a lot of traffic right now, try again in a moment", 429)
+				return
+			}
+
 			next.ServeHTTP(w, r)
-			return
-		}
-
-		userID := r.Context().Value(userIDKey)
-		var isDemo bool
-		db.QueryRow("SELECT is_demo FROM users WHERE id = ?", userID).Scan(&isDemo)
-		if isDemo {
-			http.Error(w, "demo account is read-only", 403)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+		})
+	}
 }

@@ -53,7 +53,8 @@ func newTestServer(t *testing.T) (*httptest.Server, *http.Cookie) {
 	api.HandleFunc("PATCH /api/groups/{id}", handleUpdateGroup)
 	api.HandleFunc("GET /api/me", handleMe)
 	api.HandleFunc("POST /api/reset-demo-data", handleResetDemoData)
-	mux.Handle("/api/", authMiddleware(demoReadOnlyMiddleware(api)))
+	demoLimiter := newRateLimiter(2, time.Minute)
+	mux.Handle("/api/", authMiddleware(demoWriteLimitMiddleware(demoLimiter)(api)))
 
 	srv := httptest.NewServer(mux)
 	t.Cleanup(func() { srv.Close(); db.Close() })
@@ -499,11 +500,12 @@ func TestGroupReorderPersists(t *testing.T) {
 	}
 }
 
-// TestDemoAccountIsReadOnly proves the shared demo account can read data but
-// every mutating endpoint rejects it with 403, so a public demo link can
-// never spam or corrupt real data.
-func TestDemoAccountIsReadOnly(t *testing.T) {
-	srv, _ := newTestServer(t)
+// TestDemoAccountWriteRateLimit proves the shared demo account can read and
+// write normally (including triggering its own reset) so a live interview
+// session works, but is capped at a small number of writes per minute so a
+// bot hammering the shared credentials can't run away with real data or cost.
+func TestDemoAccountWriteRateLimit(t *testing.T) {
+	srv, _ := newTestServer(t) // test server's demo limiter is capped at 2/min
 
 	hash, err := bcrypt.GenerateFromPassword([]byte("demo1234"), bcrypt.DefaultCost)
 	if err != nil {
@@ -536,14 +538,21 @@ func TestDemoAccountIsReadOnly(t *testing.T) {
 	}
 
 	wakeID := os.Getenv("TEST_WAKE_ID")
+
+	// First two writes are within the test limiter's 2/min budget.
 	resp = apiReq(t, srv, demoCookie, "POST", "/api/items/"+wakeID+"/log", map[string]string{"note": "Done"})
-	if resp.StatusCode != 403 {
-		t.Fatalf("demo POST /api/items/{id}/log returned %d, want 403", resp.StatusCode)
+	if resp.StatusCode != 200 {
+		t.Fatalf("demo POST /api/items/{id}/log (1st) returned %d, want 200", resp.StatusCode)
+	}
+	resp = apiReq(t, srv, demoCookie, "POST", "/api/reset-demo-data", nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("demo POST /api/reset-demo-data (2nd) returned %d, want 200", resp.StatusCode)
 	}
 
-	resp = apiReq(t, srv, demoCookie, "POST", "/api/reset-demo-data", nil)
-	if resp.StatusCode != 403 {
-		t.Fatalf("demo POST /api/reset-demo-data returned %d, want 403", resp.StatusCode)
+	// Third write in the same window is throttled.
+	resp = apiReq(t, srv, demoCookie, "POST", "/api/items/"+wakeID+"/log", map[string]string{"note": "Done"})
+	if resp.StatusCode != 429 {
+		t.Fatalf("demo POST /api/items/{id}/log (3rd) returned %d, want 429", resp.StatusCode)
 	}
 }
 

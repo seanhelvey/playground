@@ -46,6 +46,9 @@ func main() {
 
 	// Rate limit: 10 attempts per minute on auth endpoints
 	authLimiter := newRateLimiter(10, time.Minute)
+	// Rate limit: 60 writes per minute for the shared demo account —
+	// generous for a live human session, a backstop against bot spam
+	demoLimiter := newRateLimiter(60, time.Minute)
 
 	mux := http.NewServeMux()
 
@@ -74,7 +77,7 @@ func main() {
 	api.HandleFunc("PATCH /api/groups/{id}", handleUpdateGroup)
 	api.HandleFunc("DELETE /api/groups/{id}", handleDeleteGroup)
 	api.HandleFunc("POST /api/reset-demo-data", handleResetDemoData)
-	mux.Handle("/api/", authMiddleware(demoReadOnlyMiddleware(api)))
+	mux.Handle("/api/", authMiddleware(demoWriteLimitMiddleware(demoLimiter)(api)))
 
 	// Serve static files (PWA) — no auth, the app shell loads for everyone
 	staticDir := os.Getenv("STATIC_DIR")
