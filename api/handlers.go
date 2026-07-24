@@ -364,18 +364,13 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{"status": "deleted"})
 }
 
-// handleResetDemoData wipes logs and tasks so the account can be shown as a
-// clean demo. Blocked for the demo account itself by demoReadOnlyMiddleware —
-// only the real owner, logged in, can trigger it.
+// handleResetDemoData wipes log history so the account can be shown as a
+// clean demo. Items and tasks (habits/goals/todos themselves) are left
+// untouched — only the activity log is cleared.
 func handleResetDemoData(w http.ResponseWriter, r *http.Request) {
 	if _, err := db.Exec("DELETE FROM logs"); err != nil {
 		log.Printf("reset demo data: delete logs failed: %v", err)
 		http.Error(w, "failed to reset logs", 500)
-		return
-	}
-	if _, err := db.Exec("DELETE FROM tasks"); err != nil {
-		log.Printf("reset demo data: delete tasks failed: %v", err)
-		http.Error(w, "failed to reset tasks", 500)
 		return
 	}
 	writeJSON(w, map[string]string{"status": "reset"})

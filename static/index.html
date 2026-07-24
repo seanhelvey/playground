@@ -943,10 +943,10 @@
       {
         const footer = document.getElementById('version-footer');
         const resetBtn = document.createElement('button');
-        resetBtn.textContent = 'Reset demo data';
+        resetBtn.textContent = 'Clear activity log';
         resetBtn.style.cssText = 'margin-left:10px;font-size:0.7rem;padding:2px 8px;background:transparent;border:1px solid #2a2d3a;border-radius:4px;color:#555b66;cursor:pointer;pointer-events:auto';
         resetBtn.onclick = async () => {
-          if (!confirm('Delete all logs and tasks? This cannot be undone.')) return;
+          if (!confirm('Delete all log history? This cannot be undone. Habits and tasks are not affected.')) return;
           const res = await fetch('/api/reset-demo-data', { method: 'POST' });
           if (res.ok) { showToast('Reset done'); setTimeout(() => location.reload(), 800); }
           else showToast('Reset failed', 'err');
