@@ -256,7 +256,7 @@
 </head>
 <body>
 
-  <div id="version-footer"></div>
+  <div id="version-footer"><span id="version-text"></span></div>
   <div id="toast"></div>
 
   <div class="ci-section-hdr">
@@ -922,7 +922,7 @@
 
     /* ── Version ── */
     fetch('/api/health').then(r => r.json()).then(h => {
-      const el = document.getElementById('version-footer');
+      const el = document.getElementById('version-text');
       if (el && h.sha) el.textContent = 'version ' + h.sha.slice(0, 7);
     }).catch(() => {});
 
@@ -944,7 +944,7 @@
         const footer = document.getElementById('version-footer');
         const resetBtn = document.createElement('button');
         resetBtn.textContent = 'Reset demo data';
-        resetBtn.style.cssText = 'margin-left:10px;font-size:0.7rem;padding:2px 8px;background:transparent;border:1px solid #2a2d3a;border-radius:4px;color:#555b66;cursor:pointer';
+        resetBtn.style.cssText = 'margin-left:10px;font-size:0.7rem;padding:2px 8px;background:transparent;border:1px solid #2a2d3a;border-radius:4px;color:#555b66;cursor:pointer;pointer-events:auto';
         resetBtn.onclick = async () => {
           if (!confirm('Delete all logs and tasks? This cannot be undone.')) return;
           const res = await fetch('/api/reset-demo-data', { method: 'POST' });
