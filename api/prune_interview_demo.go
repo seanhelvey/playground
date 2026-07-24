@@ -28,8 +28,14 @@ func resetInterviewDemoItems(db *sql.DB) error {
 		return err
 	}
 
-	var goalsGroupID sql.NullInt64
+	var goalsGroupID, morningGroupID, daytimeGroupID sql.NullInt64
 	if err := db.QueryRow("SELECT id FROM groups WHERE name = 'Goals'").Scan(&goalsGroupID); err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	if err := db.QueryRow("SELECT id FROM groups WHERE name = 'Morning'").Scan(&morningGroupID); err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	if err := db.QueryRow("SELECT id FROM groups WHERE name = 'Daytime'").Scan(&daytimeGroupID); err != nil && err != sql.ErrNoRows {
 		return err
 	}
 
@@ -39,12 +45,12 @@ func resetInterviewDemoItems(db *sql.DB) error {
 		query string
 		args  []any
 	}{
-		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max)
-			VALUES (?, ?, 'boolean', 0, '', 1, 1, 1, 10)`, []any{"Wake to alarm", today}},
-		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, target_value, target_period, range_min, range_max)
-			VALUES (?, ?, 'counter', 5, 'min', 2, 1, 35, 'weekly', 1, 10)`, []any{"Meditation", today}},
-		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max)
-			VALUES (?, ?, 'boolean', 0, '', 3, 1, 1, 10)`, []any{"Screen time under target", today}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max, group_id)
+			VALUES (?, ?, 'boolean', 0, '', 1, 1, 1, 10, ?)`, []any{"Wake to alarm", today, morningGroupID}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, target_value, target_period, range_min, range_max, group_id)
+			VALUES (?, ?, 'counter', 5, 'min', 2, 1, 35, 'weekly', 1, 10, ?)`, []any{"Meditation", today, morningGroupID}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max, group_id)
+			VALUES (?, ?, 'boolean', 0, '', 3, 1, 1, 10, ?)`, []any{"Screen time under target", today, daytimeGroupID}},
 		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max, group_id)
 			VALUES (?, ?, 'boolean', 0, '', 10, 1, 1, 10, ?)`, []any{"Deploy a full-stack project", today, goalsGroupID}},
 		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, target_value, target_period, range_min, range_max, group_id)
@@ -63,4 +69,27 @@ func resetInterviewDemoItems(db *sql.DB) error {
 
 	_, err := db.Exec("INSERT INTO tasks (task, status, created) VALUES (?, 'done', ?)", interviewDemoSeedMarker, today)
 	return err
+}
+
+// fixInterviewDemoGroups assigns the daily items to the Morning/Daytime
+// groups that already existed before resetInterviewDemoItems ran (which
+// didn't know about them yet, so seeded those items ungrouped). Naturally
+// idempotent — safe to run on every boot.
+func fixInterviewDemoGroups(db *sql.DB) error {
+	assignments := []struct {
+		itemName  string
+		groupName string
+	}{
+		{"Wake to alarm", "Morning"},
+		{"Meditation", "Morning"},
+		{"Screen time under target", "Daytime"},
+	}
+	for _, a := range assignments {
+		_, err := db.Exec(`UPDATE items SET group_id = (SELECT id FROM groups WHERE name = ?) WHERE name = ? AND active = 1`,
+			a.groupName, a.itemName)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

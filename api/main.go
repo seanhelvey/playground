@@ -44,6 +44,10 @@ func main() {
 		log.Fatal("interview demo item reset failed:", err)
 	}
 
+	if err := fixInterviewDemoGroups(db); err != nil {
+		log.Fatal("interview demo group fix failed:", err)
+	}
+
 	// Rate limit: 10 attempts per minute on auth endpoints
 	authLimiter := newRateLimiter(10, time.Minute)
 	// Rate limit: 60 writes per minute for the shared demo account —
