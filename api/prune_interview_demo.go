@@ -1,24 +1,66 @@
 package main
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
-// pruneInterviewDemoContent hides items that read as personal/health content
-// or otherwise clutter a clean, professional item list before the account is
-// shown publicly as an interview demo.
-// One-off: idempotent (safe to run on every boot), meant to be deleted from
-// the codebase once confirmed live — see CLAUDE.md, data changes are one-off
-// and don't belong in permanent code.
-func pruneInterviewDemoContent(db *sql.DB) error {
-	patterns := []string{
-		"Commit to liberation from a%",
-		"Read TMS reminders%",
-		"Two hours between 3 meals%",
-		"ID plant, bird, insect, other%",
+// interviewDemoSeedMarker guards resetInterviewDemoItems so it only runs
+// once — the Fly machine stops/starts on traffic, so main() runs on every
+// cold start, not just once ever.
+const interviewDemoSeedMarker = "__interview_demo_seeded_v2__"
+
+// resetInterviewDemoItems hides every existing item and replaces them with a
+// small, clean, obviously-good set for the public interview demo. One-off:
+// guarded to run exactly once, meant to be deleted from the codebase once
+// confirmed live — see CLAUDE.md, data changes are one-off and don't belong
+// in permanent code.
+func resetInterviewDemoItems(db *sql.DB) error {
+	var done int
+	if err := db.QueryRow("SELECT COUNT(*) FROM tasks WHERE task = ?", interviewDemoSeedMarker).Scan(&done); err != nil {
+		return err
 	}
-	for _, p := range patterns {
-		if _, err := db.Exec("UPDATE items SET active = 0 WHERE name LIKE ?", p); err != nil {
+	if done > 0 {
+		return nil
+	}
+
+	if _, err := db.Exec("UPDATE items SET active = 0 WHERE active = 1"); err != nil {
+		return err
+	}
+
+	var goalsGroupID sql.NullInt64
+	if err := db.QueryRow("SELECT id FROM groups WHERE name = 'Goals'").Scan(&goalsGroupID); err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	today := time.Now().Format("2006-01-02")
+
+	inserts := []struct {
+		query string
+		args  []any
+	}{
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max)
+			VALUES (?, ?, 'boolean', 0, '', 1, 1, 1, 10)`, []any{"Wake to alarm", today}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, target_value, target_period, range_min, range_max)
+			VALUES (?, ?, 'counter', 5, 'min', 2, 1, 35, 'weekly', 1, 10)`, []any{"Meditation", today}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max)
+			VALUES (?, ?, 'boolean', 0, '', 3, 1, 1, 10)`, []any{"Screen time under target", today}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, range_min, range_max, group_id)
+			VALUES (?, ?, 'boolean', 0, '', 10, 1, 1, 10, ?)`, []any{"Deploy a full-stack project", today, goalsGroupID}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, target_value, target_period, range_min, range_max, group_id)
+			VALUES (?, ?, 'counter', 1, 'hr', 11, 1, 2, 'monthly', 1, 10, ?)`, []any{"Contribute to open source", today, goalsGroupID}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, target_value, target_period, range_min, range_max, group_id)
+			VALUES (?, ?, 'counter', 1, 'hr', 12, 1, 2, 'monthly', 1, 10, ?)`, []any{"Build a side income stream", today, goalsGroupID}},
+		{`INSERT INTO items (name, last_updated, input_type, step_size, step_unit, display_order, active, target_value, target_period, range_min, range_max, group_id)
+			VALUES (?, ?, 'counter', 1, 'hr', 13, 1, 2, 'monthly', 1, 10, ?)`, []any{"Save toward a home", today, goalsGroupID}},
+	}
+
+	for _, ins := range inserts {
+		if _, err := db.Exec(ins.query, ins.args...); err != nil {
 			return err
 		}
 	}
-	return nil
+
+	_, err := db.Exec("INSERT INTO tasks (task, status, created) VALUES (?, 'done', ?)", interviewDemoSeedMarker, today)
+	return err
 }

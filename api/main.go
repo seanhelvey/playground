@@ -40,8 +40,8 @@ func main() {
 		log.Fatal("demo user bootstrap failed:", err)
 	}
 
-	if err := pruneInterviewDemoContent(db); err != nil {
-		log.Fatal("interview demo prune failed:", err)
+	if err := resetInterviewDemoItems(db); err != nil {
+		log.Fatal("interview demo item reset failed:", err)
 	}
 
 	// Rate limit: 10 attempts per minute on auth endpoints
