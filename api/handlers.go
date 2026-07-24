@@ -364,13 +364,19 @@ func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{"status": "deleted"})
 }
 
-// handleResetDemoData wipes log history so the account can be shown as a
-// clean demo. Items and tasks (habits/goals/todos themselves) are left
-// untouched — only the activity log is cleared.
+// handleResetDemoData wipes activity history so the account can be shown as
+// a clean demo. Items and tasks (habits/goals/todos themselves) are left
+// untouched — the Recent Activity feed is built from both logs and
+// check_ins, so both need clearing or old entries linger.
 func handleResetDemoData(w http.ResponseWriter, r *http.Request) {
 	if _, err := db.Exec("DELETE FROM logs"); err != nil {
 		log.Printf("reset demo data: delete logs failed: %v", err)
 		http.Error(w, "failed to reset logs", 500)
+		return
+	}
+	if _, err := db.Exec("DELETE FROM check_ins"); err != nil {
+		log.Printf("reset demo data: delete check_ins failed: %v", err)
+		http.Error(w, "failed to reset check-ins", 500)
 		return
 	}
 	writeJSON(w, map[string]string{"status": "reset"})
