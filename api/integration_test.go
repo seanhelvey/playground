@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // newTestServer spins up a full in-memory server (real SQLite, real auth).
@@ -49,7 +51,9 @@ func newTestServer(t *testing.T) (*httptest.Server, *http.Cookie) {
 	api.HandleFunc("GET /api/groups", handleGetGroups)
 	api.HandleFunc("POST /api/groups", handleCreateGroup)
 	api.HandleFunc("PATCH /api/groups/{id}", handleUpdateGroup)
-	mux.Handle("/api/", authMiddleware(api))
+	api.HandleFunc("GET /api/me", handleMe)
+	api.HandleFunc("POST /api/reset-demo-data", handleResetDemoData)
+	mux.Handle("/api/", authMiddleware(demoReadOnlyMiddleware(api)))
 
 	srv := httptest.NewServer(mux)
 	t.Cleanup(func() { srv.Close(); db.Close() })
@@ -492,6 +496,54 @@ func TestGroupReorderPersists(t *testing.T) {
 	}
 	if groups[0].Name != "Evening" || groups[1].Name != "Morning" {
 		t.Fatalf("expected Evening first after reorder, got %q then %q", groups[0].Name, groups[1].Name)
+	}
+}
+
+// TestDemoAccountIsReadOnly proves the shared demo account can read data but
+// every mutating endpoint rejects it with 403, so a public demo link can
+// never spam or corrupt real data.
+func TestDemoAccountIsReadOnly(t *testing.T) {
+	srv, _ := newTestServer(t)
+
+	hash, err := bcrypt.GenerateFromPassword([]byte("demo1234"), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().Format(time.RFC3339)
+	if _, err := db.Exec("INSERT INTO users (email, password_hash, created, is_demo) VALUES (?, ?, ?, 1)",
+		"demo-test@test.com", string(hash), now); err != nil {
+		t.Fatal(err)
+	}
+
+	body, _ := json.Marshal(map[string]string{"email": "demo-test@test.com", "password": "demo1234"})
+	resp, err := http.Post(srv.URL+"/api/login", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var demoCookie *http.Cookie
+	for _, c := range resp.Cookies() {
+		if c.Name == "session" {
+			demoCookie = c
+		}
+	}
+	if demoCookie == nil {
+		t.Fatal("no session cookie after demo login")
+	}
+
+	resp = apiReq(t, srv, demoCookie, "GET", "/api/items", nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("demo GET /api/items returned %d, want 200", resp.StatusCode)
+	}
+
+	wakeID := os.Getenv("TEST_WAKE_ID")
+	resp = apiReq(t, srv, demoCookie, "POST", "/api/items/"+wakeID+"/log", map[string]string{"note": "Done"})
+	if resp.StatusCode != 403 {
+		t.Fatalf("demo POST /api/items/{id}/log returned %d, want 403", resp.StatusCode)
+	}
+
+	resp = apiReq(t, srv, demoCookie, "POST", "/api/reset-demo-data", nil)
+	if resp.StatusCode != 403 {
+		t.Fatalf("demo POST /api/reset-demo-data returned %d, want 403", resp.StatusCode)
 	}
 }
 

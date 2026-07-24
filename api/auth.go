@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
@@ -15,7 +16,32 @@ import (
 const (
 	sessionCookieName = "session"
 	sessionDuration   = 30 * 24 * time.Hour // 30 days
+
+	demoEmail    = "demo@playground.app"
+	demoPassword = "demo1234"
 )
+
+// ensureDemoUser creates the shared read-only demo account on first boot.
+// Idempotent — does nothing if a demo user already exists.
+func ensureDemoUser(db *sql.DB) error {
+	var count int
+	if err := db.QueryRow("SELECT COUNT(*) FROM users WHERE is_demo = 1").Scan(&count); err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(demoPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().Format(time.RFC3339)
+	_, err = db.Exec("INSERT INTO users (email, password_hash, created, is_demo) VALUES (?, ?, ?, 1)",
+		demoEmail, string(hash), now)
+	return err
+}
 
 func generateSessionID() string {
 	b := make([]byte, 32)
@@ -124,8 +150,9 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var email string
-	db.QueryRow("SELECT email FROM users WHERE id = ?", userID).Scan(&email)
-	writeJSON(w, map[string]string{"email": email})
+	var isDemo bool
+	db.QueryRow("SELECT email, is_demo FROM users WHERE id = ?", userID).Scan(&email, &isDemo)
+	writeJSON(w, map[string]any{"email": email, "is_demo": isDemo})
 }
 
 func setSession(w http.ResponseWriter, userID int64) {
@@ -176,5 +203,27 @@ func authMiddleware(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// demoReadOnlyMiddleware blocks the shared demo account from any write
+// request, so a public demo link can never mutate or spam real data.
+// Must run after authMiddleware so userIDKey is already in context.
+func demoReadOnlyMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		userID := r.Context().Value(userIDKey)
+		var isDemo bool
+		db.QueryRow("SELECT is_demo FROM users WHERE id = ?", userID).Scan(&isDemo)
+		if isDemo {
+			http.Error(w, "demo account is read-only", 403)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

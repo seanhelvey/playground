@@ -931,13 +931,28 @@
       fetch('/api/items').then(r => { if (r.status === 401) throw new Error('unauthorized'); return r.json(); }),
       fetch('/api/checkins').then(r => r.ok ? r.json() : []),
       fetch('/api/logs').then(r => r.ok ? r.json() : []),
-      fetch('/api/groups').then(r => r.ok ? r.json() : [])
-    ]).then(([items, checkins, logs, groups]) => {
+      fetch('/api/groups').then(r => r.ok ? r.json() : []),
+      fetch('/api/me').then(r => r.ok ? r.json() : {})
+    ]).then(([items, checkins, logs, groups, me]) => {
       items.sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
       window._items = items;
       window._checkins = checkins;
       window._logs = logs;
       window._groups = groups;
+
+      if (!me.is_demo) {
+        const footer = document.getElementById('version-footer');
+        const resetBtn = document.createElement('button');
+        resetBtn.textContent = 'Reset demo data';
+        resetBtn.style.cssText = 'margin-left:10px;font-size:0.7rem;padding:2px 8px;background:transparent;border:1px solid #2a2d3a;border-radius:4px;color:#555b66;cursor:pointer';
+        resetBtn.onclick = async () => {
+          if (!confirm('Delete all logs and tasks? This cannot be undone.')) return;
+          const res = await fetch('/api/reset-demo-data', { method: 'POST' });
+          if (res.ok) { showToast('Reset done'); setTimeout(() => location.reload(), 800); }
+          else showToast('Reset failed', 'err');
+        };
+        footer.appendChild(resetBtn);
+      }
       const todayCheckin = checkins.find(c => c.date === today) || null;
       window._todayCheckin = todayCheckin;
       window._editMode = false;

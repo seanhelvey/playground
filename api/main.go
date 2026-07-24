@@ -36,6 +36,10 @@ func main() {
 		log.Fatal("migration failed:", err)
 	}
 
+	if err := ensureDemoUser(db); err != nil {
+		log.Fatal("demo user bootstrap failed:", err)
+	}
+
 	// Rate limit: 10 attempts per minute on auth endpoints
 	authLimiter := newRateLimiter(10, time.Minute)
 
@@ -65,7 +69,8 @@ func main() {
 	api.HandleFunc("POST /api/groups", handleCreateGroup)
 	api.HandleFunc("PATCH /api/groups/{id}", handleUpdateGroup)
 	api.HandleFunc("DELETE /api/groups/{id}", handleDeleteGroup)
-	mux.Handle("/api/", authMiddleware(api))
+	api.HandleFunc("POST /api/reset-demo-data", handleResetDemoData)
+	mux.Handle("/api/", authMiddleware(demoReadOnlyMiddleware(api)))
 
 	// Serve static files (PWA) — no auth, the app shell loads for everyone
 	staticDir := os.Getenv("STATIC_DIR")
